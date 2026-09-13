@@ -15,6 +15,12 @@ export default defineConfig({
       testMatch: /(?:app|photo|camera)\.spec\.ts/,
       grep: /solves 9|clean printed|captures, retakes/,
     },
+    {
+      name: 'production-mobile',
+      use: { ...devices['iPhone 13'] },
+      testMatch: /mobile\.spec\.ts/,
+      grep: /photo recognition actions/,
+    },
   ],
   webServer: deployedUrl
     ? undefined

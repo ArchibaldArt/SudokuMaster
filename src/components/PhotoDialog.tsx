@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { PointerEvent } from 'react'
-import { ArrowRight, Check, LoaderCircle, RotateCw, ScanLine, X } from 'lucide-react'
+import { Check, LoaderCircle, RotateCw, ScanLine, X } from 'lucide-react'
 import type { BoardSize, Corners, RecognitionResult } from '../core/types'
 import { validCorners } from '../core/geometry'
 import { PhotoProcessor, readPhoto, rotatePhoto } from '../services/photo'
@@ -31,6 +31,8 @@ export function PhotoDialog({
   const busy = phase !== 'crop'
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null
+    const overflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
     dialog.current?.querySelector<HTMLButtonElement>('button')?.focus()
     alive.current = true
     const service = new PhotoProcessor()
@@ -58,7 +60,8 @@ export function PhotoDialog({
       cancelled = true
       alive.current = false
       service.cancel()
-      previous?.focus()
+      document.body.style.overflow = overflow
+      previous?.focus({ preventScroll: true })
     }
   }, [file])
   const rotate = async () => {
@@ -152,130 +155,132 @@ export function PhotoDialog({
             <X size={21} />
           </button>
         </div>
-        <p className="dialog-description">
-          {phase === 'recognizing'
-            ? 'Выделяем печатные числа. После распознавания вы сможете проверить и исправить каждую клетку.'
-            : 'Перетащите четыре точки к внешним углам сетки. Числа должны читаться сверху вниз.'}
-        </p>
-        <div className="crop-stage">
-          {source && (
-            <svg
-              ref={svg}
-              viewBox={`0 0 ${source.image.width} ${source.image.height}`}
-              style={{ aspectRatio: `${source.image.width}/${source.image.height}` }}
-              aria-label="Выделение границ поля"
-            >
-              <image href={source.url} width={source.image.width} height={source.image.height} />
-              {corners && (
-                <>
-                  <polygon
-                    points={corners.map((p) => `${p.x},${p.y}`).join(' ')}
-                    fill="rgba(36,87,214,.08)"
-                    stroke={valid ? '#729aff' : '#f3997f'}
-                    strokeWidth={Math.max(3, source.image.width / 240)}
-                  />
-                  {!busy &&
-                    corners.map((p, i) => (
-                      <circle
-                        key={i}
-                        cx={p.x}
-                        cy={p.y}
-                        r={source.image.width / 45}
-                        fill="#fff"
-                        stroke="#2457d6"
-                        strokeWidth={source.image.width / 300}
-                        tabIndex={0}
-                        role="button"
-                        aria-label={`Угол ${['сверху слева', 'сверху справа', 'снизу справа', 'снизу слева'][i]}`}
-                        onPointerDown={(event) => {
-                          event.currentTarget.setPointerCapture(event.pointerId)
-                          event.preventDefault()
-                        }}
-                        onPointerMove={(event) => move(event, i)}
-                        onPointerUp={(event) => event.currentTarget.releasePointerCapture(event.pointerId)}
-                        onKeyDown={(event) => {
-                          const directions: Record<string, [number, number]> = {
-                            ArrowLeft: [-1, 0],
-                            ArrowRight: [1, 0],
-                            ArrowUp: [0, -1],
-                            ArrowDown: [0, 1],
-                          }
-                          if (directions[event.key]) {
+        <div className="photo-dialog-body">
+          <p className="dialog-description">
+            {phase === 'recognizing'
+              ? 'Выделяем печатные числа. После распознавания вы сможете проверить и исправить каждую клетку.'
+              : 'Перетащите четыре точки к внешним углам сетки. Числа должны читаться сверху вниз.'}
+          </p>
+          <div className="crop-stage">
+            {source && (
+              <svg
+                ref={svg}
+                viewBox={`0 0 ${source.image.width} ${source.image.height}`}
+                style={{ aspectRatio: `${source.image.width}/${source.image.height}` }}
+                aria-label="Выделение границ поля"
+              >
+                <image href={source.url} width={source.image.width} height={source.image.height} />
+                {corners && (
+                  <>
+                    <polygon
+                      points={corners.map((p) => `${p.x},${p.y}`).join(' ')}
+                      fill="rgba(36,87,214,.08)"
+                      stroke={valid ? '#729aff' : '#f3997f'}
+                      strokeWidth={Math.max(3, source.image.width / 240)}
+                    />
+                    {!busy &&
+                      corners.map((p, i) => (
+                        <circle
+                          key={i}
+                          cx={p.x}
+                          cy={p.y}
+                          r={source.image.width / 45}
+                          fill="#fff"
+                          stroke="#2457d6"
+                          strokeWidth={source.image.width / 300}
+                          tabIndex={0}
+                          role="button"
+                          aria-label={`Угол ${['сверху слева', 'сверху справа', 'снизу справа', 'снизу слева'][i]}`}
+                          onPointerDown={(event) => {
+                            event.currentTarget.setPointerCapture(event.pointerId)
                             event.preventDefault()
-                            const [dx, dy] = directions[event.key],
-                              step = source.image.width / 200
-                            setCorners(
-                              corners.map((point, k) =>
-                                k === i
-                                  ? {
-                                      x: Math.max(0, Math.min(source.image.width, point.x + dx * step)),
-                                      y: Math.max(0, Math.min(source.image.height, point.y + dy * step)),
-                                    }
-                                  : point,
-                              ) as Corners,
-                            )
-                          }
-                        }}
-                      />
-                    ))}
-                </>
-              )}
-            </svg>
-          )}
-          {busy && (
-            <div className="processing-overlay">
-              <div className="processing-card">
-                <LoaderCircle className="spin" size={30} />
-                <strong>
-                  {phase === 'detecting' ? 'Ищем сетку…' : `${Math.round(progress.fraction * 100)}%`}
-                </strong>
-                <span>
-                  {phase === 'detecting' ? 'Подготовка фотографии на вашем устройстве' : progress.label}
-                </span>
-                {phase === 'recognizing' && (
-                  <progress value={progress.fraction} max={1} aria-label="Прогресс распознавания" />
+                          }}
+                          onPointerMove={(event) => move(event, i)}
+                          onPointerUp={(event) => event.currentTarget.releasePointerCapture(event.pointerId)}
+                          onKeyDown={(event) => {
+                            const directions: Record<string, [number, number]> = {
+                              ArrowLeft: [-1, 0],
+                              ArrowRight: [1, 0],
+                              ArrowUp: [0, -1],
+                              ArrowDown: [0, 1],
+                            }
+                            if (directions[event.key]) {
+                              event.preventDefault()
+                              const [dx, dy] = directions[event.key],
+                                step = source.image.width / 200
+                              setCorners(
+                                corners.map((point, k) =>
+                                  k === i
+                                    ? {
+                                        x: Math.max(0, Math.min(source.image.width, point.x + dx * step)),
+                                        y: Math.max(0, Math.min(source.image.height, point.y + dy * step)),
+                                      }
+                                    : point,
+                                ) as Corners,
+                              )
+                            }
+                          }}
+                        />
+                      ))}
+                  </>
                 )}
+              </svg>
+            )}
+            {busy && (
+              <div className="processing-overlay">
+                <div className="processing-card">
+                  <LoaderCircle className="spin" size={30} />
+                  <strong>
+                    {phase === 'detecting' ? 'Ищем сетку…' : `${Math.round(progress.fraction * 100)}%`}
+                  </strong>
+                  <span>
+                    {phase === 'detecting' ? 'Подготовка фотографии на вашем устройстве' : progress.label}
+                  </span>
+                  {phase === 'recognizing' && (
+                    <progress value={progress.fraction} max={1} aria-label="Прогресс распознавания" />
+                  )}
+                </div>
               </div>
+            )}
+          </div>
+          {error && (
+            <p className="error-message" role="alert">
+              {error} Ручной ввод доступен после закрытия этого окна.
+            </p>
+          )}
+          {!busy && source && (
+            <div className="crop-options">
+              <button className="button secondary small" onClick={() => void rotate()}>
+                <RotateCw size={16} /> Повернуть
+              </button>
+              <span className="detection-note">
+                {detected ? (
+                  <>
+                    <Check size={15} /> Границы найдены
+                  </>
+                ) : (
+                  'Укажите границы вручную'
+                )}
+              </span>
+              <label>
+                Размер{' '}
+                <select value={size} onChange={(event) => setSize(Number(event.target.value) as BoardSize)}>
+                  <option value={9}>9 × 9</option>
+                  <option value={16}>16 × 16</option>
+                </select>
+              </label>
             </div>
           )}
+          {!busy && corners && !valid && (
+            <p className="error-message">Поправьте углы: границы не должны пересекаться.</p>
+          )}
         </div>
-        {error && (
-          <p className="error-message" role="alert">
-            {error} Ручной ввод доступен после закрытия этого окна.
-          </p>
-        )}
-        {!busy && source && (
-          <div className="crop-options">
-            <button className="button secondary small" onClick={() => void rotate()}>
-              <RotateCw size={16} /> Повернуть
-            </button>
-            <span className="detection-note">
-              {detected ? (
-                <>
-                  <Check size={15} /> Границы найдены
-                </>
-              ) : (
-                'Укажите границы вручную'
-              )}
-            </span>
-            <label>
-              Размер{' '}
-              <select value={size} onChange={(event) => setSize(Number(event.target.value) as BoardSize)}>
-                <option value={9}>9 × 9</option>
-                <option value={16}>16 × 16</option>
-              </select>
-            </label>
-          </div>
-        )}
-        {!busy && corners && !valid && (
-          <p className="error-message">Поправьте углы: границы не должны пересекаться.</p>
-        )}
         <div className="dialog-actions">
           <button className="button secondary" onClick={onClose}>
             {busy ? 'Отменить' : 'Назад'}
           </button>
           <button className="button primary" disabled={busy || !valid} onClick={() => void recognize()}>
-            <ScanLine size={18} /> Распознать числа <ArrowRight size={17} />
+            <ScanLine size={18} /> <span>Распознать числа</span>
           </button>
         </div>
       </div>

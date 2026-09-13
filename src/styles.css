@@ -670,6 +670,18 @@ svg {
 }
 .photo-dialog {
   width: 820px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.photo-dialog > .dialog-heading,
+.photo-dialog > .dialog-actions {
+  flex-shrink: 0;
+}
+.photo-dialog-body {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .dialog-heading {
   display: flex;
@@ -1106,6 +1118,15 @@ select {
   }
   .dialog-actions .button {
     flex-basis: 160px;
+  }
+  .photo-dialog .eyebrow {
+    display: none;
+  }
+  .photo-dialog > .dialog-actions {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    margin-top: 12px;
+    padding-top: 12px;
   }
   .camera-dialog {
     height: calc(100dvh - 20px);

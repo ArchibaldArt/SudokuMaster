@@ -1,5 +1,37 @@
 import { chooseExample } from './ui'
 import { test, expect } from '@playwright/test'
+import { printedPhoto } from './printed-photo'
+
+test('keeps photo recognition actions visible on short mobile screens', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 640 })
+  await page.goto('./')
+  await page.getByLabel('Загрузить фотографию судоку').setInputFiles(await printedPhoto(page, 9))
+  const dialog = page.getByRole('dialog')
+  const recognize = dialog.getByRole('button', { name: 'Распознать числа', exact: true })
+  await expect(recognize).toBeEnabled({ timeout: 30_000 })
+  for (const viewport of [
+    { width: 390, height: 640 },
+    { width: 320, height: 568 },
+    { width: 844, height: 390 },
+  ]) {
+    await page.setViewportSize(viewport)
+    for (const button of [recognize, dialog.getByRole('button', { name: 'Назад', exact: true })]) {
+      await expect(button).toBeInViewport({ ratio: 1 })
+      expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(48)
+    }
+    await dialog.locator('.crop-options').scrollIntoViewIfNeeded()
+    await expect(recognize).toBeInViewport({ ratio: 1 })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    await page.screenshot({
+      path: `test-results/${testInfo.project.name}-photo-actions-${viewport.width}.png`,
+    })
+  }
+  await page.setViewportSize({ width: 390, height: 640 })
+  await recognize.click()
+  await expect(page.getByRole('button', { name: 'Я проверил(а) числа по фотографии' })).toBeEnabled({
+    timeout: 60_000,
+  })
+})
 
 test('fits a phone viewport and supports two-digit input and enlargement', async ({ page }, testInfo) => {
   await page.goto('./')
