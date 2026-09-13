@@ -1,21 +1,21 @@
+import { chooseExample } from './ui'
 import { test, expect } from '@playwright/test'
 
 test('fits a phone viewport and supports two-digit input and enlargement', async ({ page }, testInfo) => {
   await page.goto('/')
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
-  await page.screenshot({ path: `test-results/${testInfo.project.name}-preview.png`, fullPage: true })
-  await page.getByRole('button', { name: '16 × 16 Из журнала' }).click()
+  await chooseExample(page, 16)
   await page.getByLabel('Строка 1, столбец 2', { exact: true }).fill('16')
   await expect(page.getByLabel('Строка 1, столбец 2', { exact: true })).toHaveValue('16')
   await page.getByRole('button', { name: 'Увеличить поле' }).click()
   await expect(page.locator('.zoomed-board')).toBeVisible()
   await page.getByRole('button', { name: 'Уменьшить поле' }).click()
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
-  await page.getByRole('button', { name: '16 × 16 Из журнала' }).click()
-  await page.getByLabel('Скорость решения').selectOption('fast')
+  await chooseExample(page, 16)
   await page.getByRole('button', { name: 'Решить судоку', exact: true }).click()
   await expect(page.getByText('Судоку решено!', { exact: true })).toBeVisible()
+  await page.screenshot({ path: `test-results/${testInfo.project.name}-preview.png`, fullPage: true })
   const downloaded = page.waitForEvent('download')
-  await page.getByRole('button', { name: 'Скачать PNG', exact: true }).click()
+  await page.getByRole('button', { name: 'Сохранить решение', exact: true }).click()
   expect((await downloaded).suggestedFilename()).toBe('SudokuMaster-16x16.png')
 })

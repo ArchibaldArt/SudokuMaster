@@ -15,17 +15,17 @@ export async function solutionImage(
   const ctx = canvas.getContext('2d')!
   ctx.fillStyle = '#fff'
   ctx.fillRect(0, 0, canvas.width, canvas.height)
-  ctx.fillStyle = '#245b49'
+  ctx.fillStyle = '#2457d6'
   ctx.font = 'bold 38px Arial'
   ctx.fillText('SudokuMaster', margin, 62)
-  ctx.fillStyle = '#647069'
+  ctx.fillStyle = '#526077'
   ctx.font = '22px Arial'
   ctx.fillText(`${puzzle.size} × ${puzzle.size} · ${status}`, margin, 99)
   const cell = side / puzzle.size
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   values.forEach((value, i) => {
-    ctx.fillStyle = puzzle.givens[i] ? '#25362e' : '#2c7b5b'
+    ctx.fillStyle = puzzle.givens[i] ? '#172033' : '#2457d6'
     ctx.font = `${puzzle.givens[i] ? 'bold ' : ''}${Math.round(cell * 0.44)}px Arial`
     ctx.fillText(
       String(value),
@@ -35,7 +35,7 @@ export async function solutionImage(
   })
   for (let i = 0; i <= puzzle.size; i++) {
     ctx.lineWidth = i % puzzle.boxSize === 0 ? 4 : 1
-    ctx.strokeStyle = i % puzzle.boxSize === 0 ? '#384a40' : '#cbd3cd'
+    ctx.strokeStyle = i % puzzle.boxSize === 0 ? '#43536e' : '#d7deea'
     ctx.beginPath()
     ctx.moveTo(margin + i * cell, top)
     ctx.lineTo(margin + i * cell, top + side)
@@ -46,9 +46,9 @@ export async function solutionImage(
     ctx.stroke()
   }
   ctx.textAlign = 'left'
-  ctx.fillStyle = '#647069'
+  ctx.fillStyle = '#526077'
   ctx.font = '21px Arial'
-  ctx.fillText('Тёмные числа — исходная задача. Зелёные — найденное решение.', margin, top + side + 48)
+  ctx.fillText('Тёмные числа — исходная задача. Синие — найденное решение.', margin, top + side + 48)
   return new Promise((resolve, reject) =>
     canvas.toBlob(
       (blob) => (blob ? resolve(blob) : reject(new Error('Не удалось создать изображение'))),

@@ -5,3 +5,6 @@ playwright-report/
 *.tsbuildinfo
 .DS_Store
 public/vendor/
+.certs/
+*.pem
+*.key

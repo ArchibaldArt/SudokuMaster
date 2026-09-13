@@ -9,8 +9,8 @@ export default defineConfig({
     {
       name: 'production',
       use: { ...devices['Desktop Chrome'] },
-      testMatch: /(?:app|photo)\.spec\.ts/,
-      grep: /solves 9|clean printed/,
+      testMatch: /(?:app|photo|camera)\.spec\.ts/,
+      grep: /solves 9|clean printed|captures, retakes/,
     },
   ],
   webServer: {

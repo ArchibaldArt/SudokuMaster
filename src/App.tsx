@@ -1,32 +1,32 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
-  ArrowDown,
-  ArrowRight,
+  Camera,
   Check,
   CheckCircle2,
-  ChevronRight,
+  ChevronDown,
   CircleHelp,
   Download,
   Eraser,
   FileImage,
   Grid3X3,
-  ImagePlus,
-  LockKeyhole,
+  LoaderCircle,
   Maximize2,
+  MoreHorizontal,
   Pause,
   Pencil,
   Play,
+  Plus,
   RotateCcw,
-  ScanLine,
+  Settings2,
   ShieldCheck,
-  Sparkles,
   Square,
   Upload,
   X,
-  Zap,
 } from 'lucide-react'
 import { Board } from './components/Board'
 import { PhotoDialog } from './components/PhotoDialog'
+import { CameraDialog } from './components/CameraDialog'
+import { Dialog } from './components/Dialog'
 import { validatePuzzle } from './core/solver'
 import { emptyPuzzle } from './core/types'
 import type { BoardSize, RecognitionResult } from './core/types'
@@ -36,9 +36,13 @@ import type { Speed } from './hooks/useSolver'
 import { downloadBlob, solutionImage } from './services/export'
 
 export default function App() {
-  const [puzzle, setPuzzle] = useState(() => getExample(9))
-  const [name, setName] = useState('Классический пример')
-  const [selected, setSelected] = useState<number | null>(0)
+  const [puzzle, setPuzzle] = useState(() => emptyPuzzle(9))
+  const [name, setName] = useState('Новое судоку')
+  const [selected, setSelected] = useState<number | null>(null)
+  const [hasTask, setHasTask] = useState(false)
+  const [overlay, setOverlay] = useState<'camera' | 'source' | 'settings' | 'help' | 'editor' | null>(null)
+  const [inspecting, setInspecting] = useState(false)
+  const [keyboardOpen, setKeyboardOpen] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const [review, setReview] = useState<RecognitionResult | null>(null)
   const [confirmed, setConfirmed] = useState(false)
@@ -48,6 +52,8 @@ export default function App() {
   const [dragging, setDragging] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [error, setError] = useState('')
+  const dock = useRef<HTMLElement>(null)
+  const menu = useRef<HTMLDetailsElement>(null)
   const fileInput = useRef<HTMLInputElement>(null)
   const solveButton = useRef<HTMLButtonElement>(null)
   const solver = useSolver(puzzle)
@@ -57,7 +63,7 @@ export default function App() {
   const active = ['running', 'checking', 'paused', 'timeout'].includes(solver.phase)
   const values = solver.values ?? puzzle.givens
   const filled = values.filter(Boolean).length
-  const ready = validation.valid && (!review || confirmed)
+  const ready = hasTask && puzzle.givens.some(Boolean) && validation.valid && (!review || confirmed)
   const needsChecking = !!review && !confirmed
   const solved = solver.hasSolution
   useEffect(() => {
@@ -72,7 +78,49 @@ export default function App() {
           backgroundPosition: `${(selectedRect.x / (review.imageSize.width - selectedRect.w)) * 100}% ${(selectedRect.y / (review.imageSize.height - selectedRect.h)) * 100}%`,
         }
       : undefined
+  useEffect(() => {
+    const observer = new ResizeObserver((entries) => {
+      document.documentElement.style.setProperty(
+        '--dock-height',
+        `${entries[0].target.getBoundingClientRect().height}px`,
+      )
+    })
+    if (dock.current) observer.observe(dock.current)
+    const viewport = window.visualViewport
+    const resize = () => setKeyboardOpen(!!viewport && viewport.height < window.innerHeight * 0.75)
+    viewport?.addEventListener('resize', resize)
+    const dismiss = (event: PointerEvent) => {
+      if (menu.current && !menu.current.contains(event.target as Node)) menu.current.open = false
+    }
+    document.addEventListener('pointerdown', dismiss)
+    return () => {
+      observer.disconnect()
+      viewport?.removeEventListener('resize', resize)
+      document.removeEventListener('pointerdown', dismiss)
+    }
+  }, [])
+  const closeMenu = () => {
+    if (menu.current) menu.current.open = false
+  }
+  const openOverlay = (next: typeof overlay) => {
+    closeMenu()
+    setOverlay(next)
+  }
+  const upload = () => {
+    closeMenu()
+    setOverlay(null)
+    fileInput.current?.click()
+  }
+  const selectCell = (index: number) => {
+    if (hasTask) {
+      setSelected(index)
+      setInspecting(true)
+    }
+  }
   const loadExample = (size: BoardSize) => {
+    closeMenu()
+    setHasTask(true)
+    setInspecting(false)
     solver.reset()
     setPuzzle(getExample(size))
     setName(size === 9 ? 'Классический пример' : 'Задача из журнала')
@@ -84,6 +132,9 @@ export default function App() {
     setView('grid')
   }
   const clear = (size = puzzle.size) => {
+    closeMenu()
+    setHasTask(true)
+    setInspecting(false)
     solver.reset()
     setPuzzle(emptyPuzzle(size))
     setName('Ваша задача')
@@ -95,7 +146,7 @@ export default function App() {
     setError('')
   }
   const change = (index: number, value: number) => {
-    if (locked) return
+    if (locked || !hasTask) return
     setPuzzle((previous) => ({
       ...previous,
       givens: previous.givens.map((v, i) => (i === index ? value : v)),
@@ -115,6 +166,8 @@ export default function App() {
     setError('')
   }
   const recognized = (result: RecognitionResult) => {
+    setHasTask(true)
+    setInspecting(false)
     setPuzzle(result.puzzle)
     setReview(result)
     setConfirmed(false)
@@ -144,12 +197,20 @@ export default function App() {
       setExporting(false)
     }
   }
-  let statusTitle = 'Всё готово к решению'
-  let statusText = 'Можно начать с примера или ввести свою задачу.'
+  let statusTitle = !hasTask
+    ? 'Добавьте фото судоку'
+    : ready
+      ? 'Всё готово к решению'
+      : 'Добавьте числа в поле'
+  let statusText = !hasTask
+    ? 'Сделайте снимок или выберите готовый.'
+    : ready
+      ? 'Нажмите «Решить судоку».'
+      : 'Выберите клетку и введите число.'
   let tone = 'neutral'
   if (needsChecking) {
     statusTitle = 'Сначала проверим числа'
-    statusText = 'Сравните поле с фотографией, исправьте ошибки и подтвердите проверку.'
+    statusText = 'Сверьте поле с фото и исправьте ошибки.'
     tone = 'warning'
   } else if (review && confirmed && solver.phase === 'idle') {
     statusTitle = 'Числа проверены'
@@ -158,7 +219,7 @@ export default function App() {
   }
   if (!validation.valid) {
     statusTitle = 'В исходных числах есть конфликт'
-    statusText = 'Сначала исправьте числа, отмеченные красным. Они повторяются в строке, столбце или блоке.'
+    statusText = 'Сначала исправьте числа, отмеченные красным.'
     tone = 'danger'
   }
   if (solver.phase === 'running') {
@@ -203,371 +264,238 @@ export default function App() {
     tone = 'danger'
   }
 
+  const phaseNumber = !hasTask ? '01' : needsChecking ? '02' : '03'
   return (
-    <>
+    <div className={`app ${keyboardOpen ? 'keyboard-open' : ''}`}>
       <header className="site-header">
-        <div className="header-inner">
-          <a className="brand" href="#" aria-label="SudokuMaster — главная">
-            <span className="brand-mark">
-              <Grid3X3 size={24} strokeWidth={1.6} />
-            </span>
-            <span>
-              Sudoku<span className="brand-light">Master</span>
-              <span className="beta-label">BETA</span>
-            </span>
-          </a>
-          <nav>
-            <a href="#how-it-works">
-              Как это работает <ArrowDown size={13} />
-            </a>
-            <span className="private-badge">
-              <ShieldCheck size={16} /> Без отправки фото
-            </span>
-          </nav>
+        <div className="brand">
+          <span className="brand-mark">
+            <Grid3X3 size={23} />
+          </span>
+          <h1>
+            Sudoku<span>Master</span>
+          </h1>
         </div>
-      </header>
-      <main className="page-shell">
-        <section className="hero">
-          <div>
-            <div className="eyebrow">
-              <span className="small-star">✦</span> МЕНЬШЕ РУТИНЫ. БОЛЬШЕ ОТКРЫТИЙ.
-            </div>
-            <h1>
-              Ваша задача.
-              <br />
-              <span>Наш следующий ход.</span>
-            </h1>
-            <p>
-              Перенесите судоку с фотографии и наблюдайте,
-              <br className="desktop-break" /> как решение появляется клетка за клеткой.
-            </p>
-          </div>
-          <div className="hero-steps" aria-label="Три шага к решению">
-            <div>
-              <span className="step-icon">
-                <ImagePlus size={20} />
-              </span>
-              <span>
-                <strong>Загрузите фото</strong>
-                <small>Из журнала, книги или галереи</small>
-              </span>
-              <span className="step-index">01</span>
-            </div>
-            <div>
-              <span className="step-icon">
-                <ScanLine size={20} />
-              </span>
-              <span>
-                <strong>Проверьте числа</strong>
-                <small>Мы распознаем, вы уточняете</small>
-              </span>
-              <span className="step-index">02</span>
-            </div>
-            <div>
-              <span className="step-icon">
-                <Sparkles size={20} />
-              </span>
-              <span>
-                <strong>Посмотрите решение</strong>
-                <small>Сохраните готовое поле</small>
-              </span>
-              <span className="step-index">03</span>
-            </div>
-          </div>
-        </section>
-
-        <section className="workspace" aria-label="Рабочий стол судоку">
-          <div className="workspace-heading">
-            <div>
-              <span className="workspace-dot" />
-              <h2>Рабочий стол</h2>
-              <span className="workspace-caption">Всё начинается с одной клетки</span>
-            </div>
-            <span className="supported-badge">Классическое судоку</span>
-          </div>
-          <div className="workspace-layout">
-            <aside className="sidebar">
-              <section className="panel upload-panel">
-                <div className="panel-heading">
-                  <span className="section-number">01</span>
-                  <h3>Добавьте задачу</h3>
-                </div>
-                <input
-                  ref={fileInput}
-                  className="sr-only"
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  aria-label="Загрузить фотографию судоку"
-                  onChange={(event) => {
-                    acceptFile(event.target.files?.[0])
-                    event.target.value = ''
-                  }}
-                />
-                <button
-                  className={`dropzone ${dragging ? 'dragging' : ''}`}
-                  onClick={() => fileInput.current?.click()}
-                  onDragOver={(event) => {
-                    event.preventDefault()
-                    setDragging(true)
-                  }}
-                  onDragLeave={() => setDragging(false)}
-                  onDrop={(event) => {
-                    event.preventDefault()
-                    setDragging(false)
-                    acceptFile(event.dataTransfer.files[0])
-                  }}
-                >
-                  <span className="upload-symbol">
-                    <Upload size={26} strokeWidth={1.5} />
-                  </span>
-                  <strong>Загрузить фотографию</strong>
-                  <span>или перетащите её сюда</span>
-                  <small>JPG, PNG, WebP · до 25 МБ</small>
+        <nav className="header-actions" aria-label="Инструменты">
+          <button
+            className="icon-button help-button"
+            onClick={() => openOverlay('help')}
+            aria-label="Справка"
+          >
+            <CircleHelp size={21} />
+            <span>Справка</span>
+          </button>
+          <details
+            ref={menu}
+            className="tools-menu"
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') {
+                closeMenu()
+                menu.current?.querySelector('summary')?.focus()
+              }
+            }}
+          >
+            <summary>
+              <MoreHorizontal size={22} />
+              <span>Ещё</span>
+              <ChevronDown size={15} />
+            </summary>
+            <div className="menu-content">
+              <button onClick={() => openOverlay('camera')}>
+                <Camera size={18} />
+                Сделать фото
+              </button>
+              <button onClick={upload}>
+                <Upload size={18} />
+                Загрузить фото
+              </button>
+              <hr />
+              <button onClick={() => clear()}>
+                <Pencil size={18} />
+                Ввести вручную
+              </button>
+              {hasTask && (
+                <button onClick={() => clear()}>
+                  <Eraser size={18} />
+                  Очистить поле
                 </button>
-                <div className="privacy-note">
-                  <LockKeyhole size={14} />
-                  <span>
-                    Фото обрабатывается только
-                    <br />
-                    на вашем устройстве
-                  </span>
-                </div>
-              </section>
-              <section className="panel examples-panel">
-                <div className="panel-heading">
-                  <Grid3X3 size={17} />
-                  <h3>Попробуйте на примере</h3>
-                </div>
-                <p>Без фотографии, сразу к решению.</p>
-                <div className="example-buttons">
-                  <button onClick={() => loadExample(9)}>
-                    <span>9 × 9</span>
-                    <small>Классика</small>
-                    <ChevronRight size={16} />
-                  </button>
-                  <button onClick={() => loadExample(16)}>
-                    <span>16 × 16</span>
-                    <small>Из журнала</small>
-                    <ChevronRight size={16} />
-                  </button>
-                </div>
-              </section>
-
-              {review && (
-                <section className="panel review-panel">
-                  <div className="panel-heading">
-                    <FileImage size={17} />
-                    <h3>Оригинал фотографии</h3>
-                  </div>
-                  <button
-                    className="source-thumbnail"
-                    onClick={() => setView(view === 'photo' ? 'grid' : 'photo')}
-                    aria-label="Показать оригинал фотографии"
-                  >
-                    <img src={review.imageUrl} alt="Выровненное исходное судоку" />
-                    <span>
-                      <Maximize2 size={14} /> Посмотреть целиком
-                    </span>
-                  </button>
-                  {selected !== null && (
-                    <div className="cell-comparison">
-                      <div
-                        className="cell-crop"
-                        role="img"
-                        aria-label="Фрагмент выбранной клетки на фотографии"
-                        style={cropStyle}
-                      />
-                      <div>
-                        <strong>
-                          Строка {Math.floor(selected / puzzle.size) + 1}, столбец{' '}
-                          {(selected % puzzle.size) + 1}
-                        </strong>
-                        <small>Сверьте с печатным числом</small>
-                        {uncertain.has(selected) && (
-                          <button
-                            className="text-button"
-                            onClick={() =>
-                              setUncertain((previous) => {
-                                const next = new Set(previous)
-                                next.delete(selected)
-                                return next
-                              })
-                            }
-                          >
-                            <Check size={13} /> Здесь всё верно
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </section>
               )}
-
-              <section className="panel entry-panel">
-                <div className="panel-heading">
-                  <Pencil size={16} />
-                  <h3>{locked ? 'Исходная задача' : 'Можно ввести вручную'}</h3>
-                </div>
-                <p>
-                  {locked
-                    ? 'Чтобы исправить числа, вернитесь к редактированию.'
-                    : selected === null
-                      ? 'Выберите клетку и добавьте число.'
-                      : `Клетка: строка ${Math.floor(selected / puzzle.size) + 1}, столбец ${(selected % puzzle.size) + 1}`}
-                </p>
-                {!locked && (
-                  <>
-                    <div className={`number-pad pad-${puzzle.size}`}>
-                      {Array.from({ length: puzzle.size }, (_, i) => (
-                        <button
-                          key={i}
-                          disabled={selected === null}
-                          onClick={() => selected !== null && change(selected, i + 1)}
-                          aria-label={`Ввести ${i + 1}`}
-                        >
-                          {i + 1}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="entry-actions">
-                      <button
-                        className="text-button"
-                        disabled={selected === null}
-                        onClick={() => selected !== null && change(selected, 0)}
-                      >
-                        <Eraser size={14} /> Стереть число
-                      </button>
-                      <button className="text-button muted" onClick={() => clear()}>
-                        Очистить поле
-                      </button>
-                    </div>
-                  </>
-                )}
-                {locked && (
-                  <button className="button secondary full-width" onClick={solver.reset}>
-                    <Pencil size={15} /> Изменить задачу
-                  </button>
-                )}
-              </section>
-            </aside>
-
-            <section className={`panel board-panel ${zoom ? 'zoomed-board' : ''}`}>
-              <div className="board-heading">
-                <div>
-                  <h3>
-                    {puzzle.size} × {puzzle.size} <span> / </span>{' '}
-                    {puzzle.size === 9 ? 'Классика' : 'Большое поле'}
-                  </h3>
-                  <p title={name}>{name}</p>
-                </div>
-                <div className="size-selector" aria-label="Размер нового поля">
-                  <button
-                    aria-pressed={puzzle.size === 9}
-                    onClick={() => {
-                      if (puzzle.size !== 9) clear(9)
-                    }}
-                  >
-                    9 × 9
-                  </button>
-                  <button
-                    aria-pressed={puzzle.size === 16}
-                    onClick={() => {
-                      if (puzzle.size !== 16) clear(16)
-                    }}
-                  >
-                    16 × 16
-                  </button>
-                </div>
-              </div>
-              <div className="board-toolbar">
-                <span>
-                  <span className={active ? 'live-dot' : 'tiny-dot'} />
-                  {solved
-                    ? 'Решение найдено'
-                    : active
-                      ? 'Живой ход решения'
-                      : 'Нажмите на клетку, чтобы изменить число'}
-                </span>
+              <span className="menu-label">Примеры</span>
+              <button onClick={() => loadExample(9)}>
+                9 × 9 <span>Классика</span>
+              </button>
+              <button onClick={() => loadExample(16)}>
+                16 × 16 <span>Из журнала</span>
+              </button>
+              <hr />
+              <button onClick={() => openOverlay('settings')}>
+                <Settings2 size={18} />
+                Настройки решения
+              </button>
+            </div>
+          </details>
+        </nav>
+      </header>
+      <input
+        ref={fileInput}
+        className="sr-only"
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        aria-label="Загрузить фотографию судоку"
+        onChange={(event) => {
+          acceptFile(event.target.files?.[0])
+          event.target.value = ''
+        }}
+      />
+      <main className={`workspace ${zoom ? 'is-zoomed' : ''}`} aria-label="Рабочий стол судоку">
+        <section
+          className={`board-panel ${zoom ? 'zoomed-board' : ''} ${dragging ? 'dragging' : ''}`}
+          aria-label="Задача"
+          onDragOver={(event) => {
+            event.preventDefault()
+            setDragging(true)
+          }}
+          onDragLeave={(event) => {
+            if (!(event.relatedTarget instanceof Node) || !event.currentTarget.contains(event.relatedTarget))
+              setDragging(false)
+          }}
+          onDrop={(event) => {
+            event.preventDefault()
+            setDragging(false)
+            acceptFile(event.dataTransfer.files[0])
+          }}
+        >
+          <div className="board-heading">
+            <div className="board-title">
+              <h2>
+                {puzzle.size} × {puzzle.size}
+              </h2>
+              <span title={name}>{name}</span>
+            </div>
+            <div className="board-tools">
+              {review && (
                 <button
-                  className="icon-button"
-                  onClick={() => setZoom(!zoom)}
-                  aria-label={zoom ? 'Уменьшить поле' : 'Увеличить поле'}
+                  className="icon-button photo-toggle"
+                  aria-label={view === 'photo' ? 'Вернуться к полю' : 'Показать фото'}
+                  aria-pressed={view === 'photo'}
+                  aria-controls="sudoku-board-view"
+                  onClick={() => setView(view === 'photo' ? 'grid' : 'photo')}
                 >
-                  {zoom ? <X size={17} /> : <Maximize2 size={16} />}
+                  {view === 'photo' ? <Grid3X3 size={20} /> : <FileImage size={20} />}
+                  <span>{view === 'photo' ? 'Поле' : 'Фото'}</span>
                 </button>
-              </div>
-              <div className="board-scroll" id="sudoku-board-view">
-                <div className="board-stage">
-                  {view === 'photo' && review ? (
-                    <img
-                      className="original-board"
-                      src={review.imageUrl}
-                      alt="Оригинал судоку для проверки"
-                    />
-                  ) : (
-                    <Board
-                      puzzle={puzzle}
-                      values={values}
-                      selected={selected}
-                      locked={locked}
-                      conflicts={conflicts}
-                      uncertain={uncertain}
-                      kinds={solver.kinds}
-                      latest={solver.latest}
-                      solved={solved}
-                      onSelect={setSelected}
-                      onChange={change}
-                    />
-                  )}
+              )}
+              <button
+                className="icon-button"
+                onClick={() => setZoom(!zoom)}
+                aria-label={zoom ? 'Уменьшить поле' : 'Увеличить поле'}
+              >
+                {zoom ? <X size={21} /> : <Maximize2 size={20} />}
+              </button>
+            </div>
+          </div>
+          <div className="board-scroll" id="sudoku-board-view">
+            <div className="board-stage">
+              {view === 'photo' && review ? (
+                <img className="original-board" src={review.imageUrl} alt="Оригинал судоку для проверки" />
+              ) : (
+                <Board
+                  puzzle={puzzle}
+                  values={values}
+                  selected={selected}
+                  locked={locked || !hasTask}
+                  conflicts={conflicts}
+                  uncertain={uncertain}
+                  kinds={solver.kinds}
+                  latest={solver.latest}
+                  solved={solved}
+                  onSelect={selectCell}
+                  onChange={change}
+                />
+              )}
+              {!hasTask && (
+                <div className="empty-board-hint" aria-hidden="true">
+                  <Camera size={28} />
+                  <span>Здесь появится ваша задача</span>
                 </div>
-              </div>
-              <div className="board-legend">
-                <span>
-                  <i className="legend-given" /> Исходные
-                </span>
-                <span>
-                  <i className="legend-found" /> Найденные
-                </span>
-                <span>
-                  <i className="legend-guess" /> Гипотеза
-                </span>
-                <span className="filled-count">
-                  {filled} / {puzzle.size * puzzle.size} клеток
-                </span>
-              </div>
-              <section className={`solve-panel ${tone}`} aria-label="Проверка и решение">
-                <div className="solve-status" role="status" aria-live="polite" aria-atomic="true">
-                  <span className="status-icon">
-                    {tone === 'success' ? (
-                      <CheckCircle2 size={21} />
-                    ) : tone === 'danger' || tone === 'warning' ? (
-                      <CircleHelp size={21} />
-                    ) : (
-                      <Sparkles size={21} />
-                    )}
-                  </span>
-                  <div>
-                    <strong>{statusTitle}</strong>
-                    <p id="solve-status-text">{statusText}</p>
-                    {needsChecking && uncertain.size > 0 && (
-                      <p className="review-count">Клеток, требующих внимания: {uncertain.size}</p>
-                    )}
-                  </div>
+              )}
+              {dragging && (
+                <div className="drop-overlay">
+                  <Upload size={32} />
+                  Отпустите фотографию здесь
                 </div>
-                {review && (
-                  <div className="review-tools">
-                    <button
-                      className="text-button photo-toggle"
-                      aria-controls="sudoku-board-view"
-                      aria-pressed={view === 'photo'}
-                      onClick={() => setView(view === 'photo' ? 'grid' : 'photo')}
-                    >
-                      {view === 'photo' ? <Grid3X3 size={18} /> : <FileImage size={18} />}
-                      {view === 'photo' ? 'Вернуться к полю' : 'Показать фото'}
-                    </button>
-                  </div>
-                )}
-                <div className={`solve-controls ${needsChecking ? 'needs-confirmation' : ''}`}>
+              )}
+            </div>
+          </div>
+          <div className="board-meta">
+            <span>
+              {hasTask
+                ? `${filled} / ${puzzle.size * puzzle.size} клеток`
+                : 'Классические судоку 9×9 и 16×16'}
+            </span>
+            {hasTask && (
+              <button className="text-button" onClick={() => openOverlay('settings')}>
+                Подробности
+              </button>
+            )}
+          </div>
+          {inspecting && selected !== null && !locked && view === 'grid' && (
+            <div className="cell-tools">
+              {review && (
+                <div
+                  className="cell-crop"
+                  role="img"
+                  aria-label="Фрагмент выбранной клетки на фотографии"
+                  style={cropStyle}
+                />
+              )}
+              <span>
+                Строка {Math.floor(selected / puzzle.size) + 1}, столбец {(selected % puzzle.size) + 1}
+              </span>
+              <button className="text-button" onClick={() => openOverlay('editor')}>
+                <Pencil size={17} />
+                Правка
+              </button>
+            </div>
+          )}
+        </section>
+        <aside className="workflow-dock" ref={dock}>
+          <section className={`solve-panel ${tone}`} aria-label="Проверка и решение">
+            <div className="step-label">
+              <span>{phaseNumber}</span>
+              {!hasTask ? 'Фотография' : needsChecking ? 'Проверка чисел' : 'Решение'}
+            </div>
+            <div className="solve-status" role="status" aria-live="polite" aria-atomic="true">
+              <div className="status-title">
+                {tone === 'success' ? (
+                  <CheckCircle2 size={22} />
+                ) : active ? (
+                  <LoaderCircle
+                    size={21}
+                    className={solver.phase === 'running' || solver.phase === 'checking' ? 'spin' : ''}
+                  />
+                ) : null}
+                <h2>{statusTitle}</h2>
+              </div>
+              <p id="solve-status-text">{statusText}</p>
+              {needsChecking && uncertain.size > 0 && (
+                <p className="review-count">Требуют внимания: {uncertain.size}</p>
+              )}
+            </div>
+            <div className={`solve-controls ${needsChecking ? 'needs-confirmation' : ''}`}>
+              {!hasTask ? (
+                <>
+                  <button className="button primary" onClick={() => openOverlay('camera')}>
+                    <Camera size={21} />
+                    Сделать фото
+                  </button>
+                  <button className="button secondary" onClick={upload}>
+                    <Upload size={20} />
+                    Загрузить фото
+                  </button>
+                </>
+              ) : (
+                <>
                   {needsChecking && (
                     <button
                       className="button primary confirm-button"
@@ -576,6 +504,7 @@ export default function App() {
                       onClick={() => {
                         setConfirmed(true)
                         setUncertain(new Set())
+                        setInspecting(false)
                       }}
                     >
                       <CheckCircle2 size={21} />
@@ -590,137 +519,267 @@ export default function App() {
                       aria-describedby="solve-status-text"
                       onClick={() => {
                         setView('grid')
+                        setInspecting(false)
                         solver.start()
                       }}
                     >
-                      <Play size={17} fill="currentColor" />{' '}
+                      <Play size={19} fill="currentColor" />
                       {solver.phase === 'finished' ? 'Запустить ещё раз' : 'Решить судоку'}
-                      <ArrowRight size={18} />
                     </button>
                   )}
                   {['running', 'checking'].includes(solver.phase) && (
                     <button className="button primary" onClick={solver.pause}>
-                      <Pause size={17} /> Пауза
+                      <Pause size={20} />
+                      Пауза
                     </button>
                   )}
                   {['paused', 'timeout'].includes(solver.phase) && (
                     <button className="button primary" onClick={solver.resume}>
-                      <Play size={17} /> Продолжить
-                    </button>
-                  )}
-                  {active && (
-                    <button className="button secondary stop-button" onClick={solver.reset}>
-                      <Square size={14} /> Остановить
+                      <Play size={20} />
+                      Продолжить
                     </button>
                   )}
                   {solved && (
                     <button
-                      className="button primary download-button"
+                      className="button download-button"
                       disabled={exporting}
                       onClick={() => void download()}
                     >
-                      <Download size={18} /> {exporting ? 'Сохраняем…' : 'Скачать PNG'}
+                      <Download size={20} />
+                      {exporting ? 'Сохраняем…' : 'Сохранить решение'}
                     </button>
                   )}
-                  {!active && locked && (
-                    <button
-                      className="button secondary restart-button"
-                      onClick={solver.reset}
-                      aria-label="Вернуться к исходной задаче"
-                    >
-                      <RotateCcw size={17} />
+                  {solved && !active && (
+                    <button className="button primary" onClick={() => openOverlay('source')}>
+                      <Plus size={20} />
+                      Новая задача
                     </button>
                   )}
-                </div>
-                {!solved && (
-                  <div className="solve-options">
-                    <label className="speed-selector">
-                      <Zap size={15} />
-                      <span>Скорость решения</span>
-                      <select
-                        aria-label="Скорость решения"
-                        value={solver.speed}
-                        onChange={(event) => solver.setSpeed(event.target.value as Speed)}
-                      >
-                        <option value="slow">Не спеша</option>
-                        <option value="normal">Обычная скорость</option>
-                        <option value="fast">Быстро</option>
-                      </select>
-                    </label>
-                  </div>
-                )}
-                {(active || solver.phase === 'finished') && (
-                  <div className="solver-stats">
-                    <span>
-                      Выводы <b>{solver.stats.deductions}</b>
-                    </span>
-                    <span>
-                      Гипотезы <b>{solver.stats.guesses}</b>
-                    </span>
-                    <span>
-                      Возвраты <b>{solver.stats.backtracks}</b>
-                    </span>
-                    <span>
-                      Вычисления <b>{(solver.stats.elapsedMs / 1000).toFixed(2)} с</b>
-                    </span>
-                  </div>
-                )}
-              </section>
-              {error && (
-                <p className="error-message" role="alert">
-                  {error}
-                </p>
+                  {active && (
+                    <button className="button secondary stop-button" onClick={solver.reset}>
+                      <Square size={17} />
+                      Остановить
+                    </button>
+                  )}
+                </>
               )}
-            </section>
-          </div>
-        </section>
-
-        <section id="how-it-works" className="about-section">
-          <div>
-            <span className="eyebrow">НЕМНОГО О МАГИИ ВНУТРИ</span>
-            <h2>
-              Правила знакомые.
-              <br />
-              Возможности новые.
-            </h2>
-          </div>
-          <div className="about-copy">
-            <details>
-              <summary>Какие судоку умеет решать SudokuMaster?</summary>
-              <p>
-                Классические задачи 9×9 с блоками 3×3 и 16×16 с блоками 4×4. В каждой строке, столбце и блоке
-                числа встречаются по одному разу. Программа сначала ищет логические выводы, а затем проверяет
-                гипотезы и возвращается назад, если встречает противоречие.
+            </div>
+            {hasTask && (
+              <div className="workflow-secondary">
+                {!active && locked ? (
+                  <button
+                    className="text-button"
+                    onClick={solver.reset}
+                    aria-label="Вернуться к исходной задаче"
+                  >
+                    <RotateCcw size={17} />
+                    Изменить задачу
+                  </button>
+                ) : (
+                  <button className="text-button" onClick={() => openOverlay('settings')}>
+                    <Settings2 size={17} />
+                    <span>
+                      {solver.speed === 'fast'
+                        ? 'Быстро'
+                        : solver.speed === 'normal'
+                          ? 'Обычная скорость'
+                          : 'Не спеша'}
+                    </span>
+                  </button>
+                )}
+                {!active && !solved && (
+                  <button className="text-button" onClick={() => openOverlay('source')}>
+                    Новое фото
+                  </button>
+                )}
+              </div>
+            )}
+            {error && (
+              <p className="error-message" role="alert">
+                {error}
               </p>
-            </details>
-            <details>
-              <summary>Что делать с записями ручкой на фотографии?</summary>
-              <p>
-                Мы стараемся оставить печатные числа и убрать синие записи и мелкие заметки. Это не всегда
-                получается точно, поэтому перед решением нужно сверить поле с фотографией. Любое число можно
-                исправить или стереть. Чёрную ручку бывает трудно отличить от печати.
-              </p>
-            </details>
-            <details>
-              <summary>Куда отправляются мои фотографии?</summary>
-              <p>
-                Фотографии никуда не отправляются: обработка и решение выполняются в вашем браузере. При
-                первом распознавании загружаются необходимые модули с этого сайта. После закрытия вкладки
-                история задач не сохраняется.
-              </p>
-            </details>
-          </div>
-        </section>
+            )}
+          </section>
+          <p className="privacy-note">
+            <ShieldCheck size={16} />
+            Фотографии остаются на устройстве
+          </p>
+        </aside>
       </main>
-      <footer className="site-footer">
-        <span>
-          <Grid3X3 size={16} /> SudokuMaster
-        </span>
-        <span>Для тех, кто любит находить решения.</span>
-        <span>
-          9 × 9 <span className="footer-dot">·</span> 16 × 16
-        </span>
-      </footer>
+      {overlay === 'camera' && (
+        <CameraDialog
+          onClose={() => setOverlay(null)}
+          onUpload={upload}
+          onCapture={(next) => {
+            setOverlay(null)
+            acceptFile(next)
+          }}
+        />
+      )}
+      {overlay === 'source' && (
+        <Dialog title="Новая задача" onClose={() => setOverlay(null)}>
+          <p className="dialog-description">Сделайте снимок судоку или выберите фотографию.</p>
+          <div className="source-actions">
+            <button className="button primary" onClick={() => setOverlay('camera')}>
+              <Camera size={20} />
+              Сделать фото
+            </button>
+            <button className="button secondary" onClick={upload}>
+              <Upload size={20} />
+              Загрузить фото
+            </button>
+          </div>
+        </Dialog>
+      )}
+      {overlay === 'settings' && (
+        <Dialog title="Настройки решения" onClose={() => setOverlay(null)}>
+          <label className="setting-row">
+            <span>Скорость решения</span>
+            <select
+              aria-label="Скорость решения"
+              value={solver.speed}
+              onChange={(event) => solver.setSpeed(event.target.value as Speed)}
+            >
+              <option value="fast">Быстро</option>
+              <option value="normal">Обычная скорость</option>
+              <option value="slow">Не спеша</option>
+            </select>
+          </label>
+          <p className="setting-note">
+            Быстро — без задержек. Выберите более медленный режим, чтобы наблюдать отдельные ходы.
+          </p>
+          {!review && !locked && (
+            <label className="setting-row">
+              <span>Размер нового поля</span>
+              <select
+                aria-label="Размер нового поля"
+                value={puzzle.size}
+                onChange={(event) => clear(Number(event.target.value) as BoardSize)}
+              >
+                <option value={9}>9 × 9</option>
+                <option value={16}>16 × 16</option>
+              </select>
+            </label>
+          )}
+          <div className="board-legend">
+            <span>
+              <i className="legend-given" />
+              Исходные числа
+            </span>
+            <span>
+              <i className="legend-found" />
+              Найденные числа
+            </span>
+            <span>
+              <i className="legend-guess" />
+              Предположения
+            </span>
+          </div>
+          <div className="solver-stats">
+            <span>
+              Логические выводы <b>{solver.stats.deductions}</b>
+            </span>
+            <span>
+              Предположения <b>{solver.stats.guesses}</b>
+            </span>
+            <span>
+              Возвраты <b>{solver.stats.backtracks}</b>
+            </span>
+            <span>
+              Вычисления <b>{(solver.stats.elapsedMs / 1000).toFixed(2)} с</b>
+            </span>
+          </div>
+          {solver.reason && <p className="setting-note">{solver.reason}</p>}
+        </Dialog>
+      )}
+      {overlay === 'editor' && selected !== null && (
+        <Dialog title="Правка клетки" onClose={() => setOverlay(null)}>
+          <div className="cell-comparison">
+            {review && (
+              <div
+                className="cell-crop large"
+                role="img"
+                aria-label="Фрагмент выбранной клетки на фотографии"
+                style={cropStyle}
+              />
+            )}
+            <p>
+              Строка {Math.floor(selected / puzzle.size) + 1}, столбец {(selected % puzzle.size) + 1}
+              {review && <small>Сверьте с печатным числом</small>}
+            </p>
+          </div>
+          <div className={`number-pad pad-${puzzle.size}`}>
+            {Array.from({ length: puzzle.size }, (_, i) => (
+              <button
+                key={i}
+                disabled={locked}
+                onClick={() => change(selected, i + 1)}
+                aria-label={`Ввести ${i + 1}`}
+              >
+                {i + 1}
+              </button>
+            ))}
+          </div>
+          <div className="dialog-actions">
+            <button className="button secondary" disabled={locked} onClick={() => change(selected, 0)}>
+              <Eraser size={18} />
+              Стереть число
+            </button>
+            <button
+              className="button primary"
+              onClick={() => {
+                setUncertain((previous) => {
+                  const next = new Set(previous)
+                  next.delete(selected)
+                  return next
+                })
+                setOverlay(null)
+              }}
+            >
+              <Check size={19} />
+              Готово
+            </button>
+          </div>
+        </Dialog>
+      )}
+      {overlay === 'help' && (
+        <Dialog title="Справка" onClose={() => setOverlay(null)}>
+          <div className="help-content">
+            <h3>От фотографии к решению</h3>
+            <ol>
+              <li>Сделайте или загрузите фото судоку.</li>
+              <li>Уточните границы поля и распознайте числа.</li>
+              <li>Сверьте числа с оригиналом, подтвердите проверку и запустите решение.</li>
+            </ol>
+            <h3>Что можно решать</h3>
+            <p>
+              Классические судоку 9×9 с блоками 3×3 и 16×16 с блоками 4×4. Другие варианты пока не
+              поддерживаются.
+            </p>
+            <h3>Исправление чисел</h3>
+            <p>
+              Нажмите на клетку, чтобы изменить число. «Правка» открывает фрагмент фотографии и цифровые
+              кнопки. Стрелки перемещают выделение, Backspace и Delete очищают ввод. Большое поле можно
+              увеличить.
+            </p>
+            <h3>Рукописные заметки</h3>
+            <p>
+              Синие записи и мелкие кандидаты подавляются, но распознавание может ошибаться. Перед решением
+              проверьте печатные числа. Красным отмечены конфликты, янтарным — сомнительные клетки.
+            </p>
+            <h3>Ваши фотографии</h3>
+            <p>
+              Камера, распознавание и решение работают в браузере. Снимки никуда не отправляются и не
+              сохраняются после закрытия вкладки. Для съёмки нужен HTTPS или localhost и разрешение камеры.
+            </p>
+            <h3>Дополнительные инструменты</h3>
+            <p>
+              В меню «Ещё» находятся примеры, ручной ввод и настройки скорости. JPG, PNG и WebP до 25 МБ. При
+              первом распознавании браузер загружает необходимые модули с этого сайта.
+            </p>
+          </div>
+        </Dialog>
+      )}
       {file && (
         <PhotoDialog
           file={file}
@@ -729,6 +788,6 @@ export default function App() {
           onRecognized={recognized}
         />
       )}
-    </>
+    </div>
   )
 }

@@ -20,7 +20,7 @@ export function useSolver(puzzle: PuzzleDefinition) {
   const [stats, setStats] = useState(initialStats)
   const [result, setResult] = useState<SolveResult | null>(null)
   const [hasSolution, setHasSolution] = useState(false)
-  const [speed, setSpeedState] = useState<Speed>('normal')
+  const [speed, setSpeedState] = useState<Speed>('fast')
   const worker = useRef<Worker | null>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const state = useRef({ paused: false, pending: false, solved: false, speed, timedOut: false })

@@ -20,8 +20,12 @@ export default defineConfig({
       use: { ...devices['iPhone 13'], defaultBrowserType: 'chromium' },
       testMatch: /mobile\.spec\.ts/,
     },
-    { name: 'firefox', use: { ...devices['Desktop Firefox'] }, testMatch: /app\.spec\.ts/ },
-    { name: 'webkit', use: { ...devices['iPhone 13'] }, testMatch: /(?:mobile|photo)\.spec\.ts/ },
+    { name: 'firefox', use: { ...devices['Desktop Firefox'] }, testMatch: /(?:app|camera)\.spec\.ts/ },
+    {
+      name: 'webkit',
+      use: { ...devices['iPhone 13'] },
+      testMatch: /(?:mobile|photo|camera|design)\.spec\.ts/,
+    },
   ],
   webServer: {
     command: 'npm run dev -- --port 5173 --strictPort',

@@ -43,6 +43,7 @@ export function Board({
     <div
       className={`sudoku-grid size-${size} ${solved ? 'is-solved' : ''}`}
       role="grid"
+      aria-readonly={locked}
       aria-label={`Поле судоку ${size} на ${size}`}
       style={{ '--size': size } as CSSProperties}
     >
@@ -85,7 +86,7 @@ export function Board({
               readOnly={locked}
               aria-label={`Строка ${r + 1}, столбец ${c + 1}`}
               aria-invalid={conflicts.has(index)}
-              tabIndex={index === (selected ?? 0) ? 0 : -1}
+              tabIndex={!locked && index === (selected ?? 0) ? 0 : -1}
               onFocus={(event) => {
                 onSelect(index)
                 event.target.select()

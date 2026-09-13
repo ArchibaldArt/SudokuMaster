@@ -170,8 +170,8 @@ export function PhotoDialog({
                 <>
                   <polygon
                     points={corners.map((p) => `${p.x},${p.y}`).join(' ')}
-                    fill="rgba(36,91,73,.08)"
-                    stroke={valid ? '#62e2b3' : '#f3997f'}
+                    fill="rgba(36,87,214,.08)"
+                    stroke={valid ? '#729aff' : '#f3997f'}
                     strokeWidth={Math.max(3, source.image.width / 240)}
                   />
                   {!busy &&
@@ -182,7 +182,7 @@ export function PhotoDialog({
                         cy={p.y}
                         r={source.image.width / 45}
                         fill="#fff"
-                        stroke="#245b49"
+                        stroke="#2457d6"
                         strokeWidth={source.image.width / 300}
                         tabIndex={0}
                         role="button"

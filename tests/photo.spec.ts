@@ -1,3 +1,4 @@
+import { chooseExample, menuAction } from './ui'
 import { test, expect } from '@playwright/test'
 import { getExample } from '../src/data/examples'
 import { writeFile } from 'node:fs/promises'
@@ -33,9 +34,9 @@ for (const size of [9, 16] as const)
     await expect(actions.getByRole('status').getByRole('button')).toHaveCount(0)
     await expect(confirm).toBeEnabled()
     await expect(solve).toBeDisabled()
-    await actions.getByRole('button', { name: 'Показать фото', exact: true }).click()
+    await page.getByRole('button', { name: 'Показать фото', exact: true }).click()
     await expect(page.getByAltText('Оригинал судоку для проверки', { exact: true })).toBeVisible()
-    await actions.getByRole('button', { name: 'Вернуться к полю', exact: true }).click()
+    await page.getByRole('button', { name: 'Вернуться к полю', exact: true }).click()
     await expect(page.locator('.cell input')).toHaveCount(size * size)
 
     if (testInfo.project.name === 'webkit' && size === 16) {
@@ -46,12 +47,7 @@ for (const size of [9, 16] as const)
     const solveBox = (await solve.boundingBox())!
     expect(confirmBox.height).toBeGreaterThanOrEqual(48)
     expect(solveBox.height).toBeGreaterThanOrEqual(48)
-    if (page.viewportSize()!.width > 1000) {
-      expect(Math.abs(confirmBox.y - solveBox.y)).toBeLessThan(2)
-      expect(solveBox.x).toBeGreaterThan(confirmBox.x + confirmBox.width)
-    } else {
-      expect(solveBox.y).toBeGreaterThan(confirmBox.y + confirmBox.height)
-    }
+    expect(solveBox.y).toBeGreaterThan(confirmBox.y + confirmBox.height)
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
     await actions.screenshot({ path: `test-results/${testInfo.project.name}-review-${size}.png` })
     if (size === 16) {
@@ -73,7 +69,6 @@ for (const size of [9, 16] as const)
         .evaluateAll((inputs) => inputs.map((input) => Number((input as HTMLInputElement).value))),
     ).toEqual(givens)
     await actions.screenshot({ path: `test-results/${testInfo.project.name}-confirmed-${size}.png` })
-    await page.getByLabel('Скорость решения').selectOption('fast')
     await page.getByRole('button', { name: 'Решить судоку', exact: true }).click()
     await expect(page.getByText('Судоку решено!', { exact: true })).toBeVisible()
     expect(errors).toEqual([])
@@ -183,7 +178,6 @@ test('recognizes the annotated magazine photograph and permits correcting every 
   }
   await page.getByRole('button', { name: 'Я проверил(а) числа по фотографии', exact: true }).click()
   await expect(page.locator('.cell.uncertain')).toHaveCount(0)
-  await page.getByLabel('Скорость решения').selectOption('fast')
   await page.getByRole('button', { name: 'Решить судоку', exact: true }).click()
   await expect(page.getByText('Судоку решено!', { exact: true })).toBeVisible()
 })
@@ -223,19 +217,19 @@ test('requires fresh confirmation after edits and another photograph, and blocks
   await upload()
   await expect(confirm).toBeEnabled()
   await expect(solve).toBeDisabled()
-  await page.getByRole('button', { name: '9 × 9 Классика', exact: true }).click()
+  await chooseExample(page, 9)
   await expect(confirm).toHaveCount(0)
   await expect(solve).toBeEnabled()
-  await page.getByRole('button', { name: 'Очистить поле', exact: true }).click()
+  await menuAction(page, 'Ввести вручную')
   await expect(confirm).toHaveCount(0)
-  await expect(solve).toBeEnabled()
+  await expect(solve).toBeDisabled()
 })
 
 test('cancels photo processing without replacing the next task', async ({ page }) => {
   await page.goto('/')
   await page.getByLabel('Загрузить фотографию судоку').setInputFiles('tests/fixtures/magazine16.png')
   await page.getByRole('button', { name: 'Закрыть обработку фотографии' }).click()
-  await page.getByRole('button', { name: 'Очистить поле', exact: true }).click()
+  await menuAction(page, 'Ввести вручную')
   await page.waitForTimeout(500)
   await expect(page.getByRole('dialog')).toHaveCount(0)
   expect(
@@ -253,7 +247,10 @@ test('handles an OCR model loading failure and keeps manual entry available', as
   await page.getByRole('button', { name: 'Распознать числа' }).click()
   await expect(page.getByRole('alert')).toBeVisible({ timeout: 30_000 })
   await page.getByRole('button', { name: 'Закрыть обработку фотографии' }).click()
+  await menuAction(page, 'Ввести вручную')
   await expect(page.getByLabel('Строка 1, столбец 3', { exact: true })).toBeEditable()
+  await page.getByLabel('Строка 1, столбец 3', { exact: true }).fill('3')
+  await expect(page.getByRole('button', { name: 'Решить судоку', exact: true })).toBeEnabled()
 })
 
 test('corrects a rotated photograph before recognition', async ({ page }) => {
