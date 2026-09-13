@@ -7,6 +7,7 @@ const key = process.env.SUDOKU_HTTPS_KEY
 if (!!cert !== !!key) throw new Error('Укажите оба пути: SUDOKU_HTTPS_CERT и SUDOKU_HTTPS_KEY')
 
 export default defineConfig({
+  base: process.env.SUDOKU_BASE_PATH || '/',
   plugins: [react()],
   server: { https: cert && key ? { cert: readFileSync(cert), key: readFileSync(key) } : undefined },
   test: { include: ['src/**/*.test.ts'], environment: 'node' },

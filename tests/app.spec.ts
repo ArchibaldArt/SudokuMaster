@@ -5,7 +5,7 @@ import { getExample } from '../src/data/examples'
 test('solves 9×9, downloads a real PNG and preserves givens', async ({ page }, testInfo) => {
   const errors: string[] = []
   page.on('pageerror', (error) => errors.push(error.message))
-  await page.goto('/')
+  await page.goto('./')
   await expect(page.getByRole('main', { name: 'Рабочий стол судоку' })).toBeVisible()
   await chooseExample(page, 9)
   await page.getByRole('button', { name: 'Решить судоку', exact: true }).click()
@@ -33,7 +33,7 @@ test('solves 9×9, downloads a real PNG and preserves givens', async ({ page }, 
 })
 
 test('solves the 16×16 magazine example', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('./')
   await chooseExample(page, 16)
   await expect(page.locator('.cell')).toHaveCount(256)
   await page.getByRole('button', { name: 'Решить судоку', exact: true }).click()
@@ -49,7 +49,7 @@ test('solves the 16×16 magazine example', async ({ page }) => {
 })
 
 test('rejects duplicate givens and handles a puzzle without solutions', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('./')
   await chooseExample(page, 9)
   await page.getByLabel('Строка 1, столбец 3', { exact: true }).fill('5')
   await expect(page.getByText('В исходных числах есть конфликт')).toBeVisible()
@@ -61,7 +61,7 @@ test('rejects duplicate givens and handles a puzzle without solutions', async ({
 })
 
 test('pauses actual search, resumes and stops without stale events', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('./')
   await chooseExample(page, 9)
   await setSpeed(page, 'slow')
   await page.getByRole('button', { name: 'Решить судоку', exact: true }).click()
@@ -89,7 +89,7 @@ test('pauses actual search, resumes and stops without stale events', async ({ pa
 })
 
 test('explains multiple solutions instead of falsely claiming uniqueness', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('./')
   await menuAction(page, 'Ввести вручную')
   await page.getByLabel('Строка 1, столбец 1', { exact: true }).fill('1')
   await page.getByRole('button', { name: 'Решить судоку', exact: true }).click()
@@ -97,7 +97,7 @@ test('explains multiple solutions instead of falsely claiming uniqueness', async
 })
 
 test('fails gracefully for unsupported uploads and leaves manual input working', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('./')
   await page
     .getByLabel('Загрузить фотографию судоку')
     .setInputFiles({ name: 'example.heic', mimeType: 'image/heic', buffer: Buffer.from('invalid') })
@@ -119,7 +119,7 @@ test('suspends on the computation budget and continues the same search', async (
     }\n`
     await route.fulfill({ response, body: clock + (await response.text()) })
   })
-  await page.goto('/')
+  await page.goto('./')
   await chooseExample(page, 9)
   await page.getByRole('button', { name: 'Решить судоку', exact: true }).click()
   await expect(page.getByText('Поиск приостановлен', { exact: true })).toBeVisible()

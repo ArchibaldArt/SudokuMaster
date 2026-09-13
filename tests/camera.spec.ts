@@ -111,7 +111,7 @@ test('captures, retakes and solves a camera photograph without microphone or ext
       external.push(request.url())
   })
   await mockCamera(page)
-  await page.goto('/')
+  await page.goto('./')
   expect((await cameraState(page)).calls).toHaveLength(0)
   await page.getByRole('button', { name: 'Сделать фото', exact: true }).click()
   const dialog = page.getByRole('dialog', { name: 'Сделать фото', exact: true })
@@ -160,7 +160,7 @@ for (const [mode, message] of [
 ] as const) {
   test(`handles a ${mode} camera and preserves the current puzzle`, async ({ page }) => {
     await mockCamera(page, mode)
-    await page.goto('/')
+    await page.goto('./')
     await chooseExample(page, 9)
     await menuAction(page, 'Сделать фото')
     await expect(page.getByRole('alert')).toContainText(message)
@@ -177,7 +177,7 @@ for (const [mode, message] of [
 
 test('stops a late camera stream after the dialog has been closed', async ({ page }) => {
   await mockCamera(page, 'late')
-  await page.goto('/')
+  await page.goto('./')
   await page.getByRole('button', { name: 'Сделать фото', exact: true }).click()
   await expect(page.getByText('Ожидаем доступ к камере…', { exact: true })).toBeVisible()
   await page.keyboard.press('Escape')
@@ -193,7 +193,7 @@ test('stops a late camera stream after the dialog has been closed', async ({ pag
 
 test('stops a live camera when closed or when leaving the page', async ({ page }) => {
   await mockCamera(page)
-  await page.goto('/')
+  await page.goto('./')
   await page.getByRole('button', { name: 'Сделать фото', exact: true }).click()
   await expect(page.getByRole('button', { name: 'Снять фото', exact: true })).toBeEnabled()
   await page.keyboard.press('Escape')
@@ -211,7 +211,7 @@ for (const scenario of ['insecure', 'unsupported'] as const) {
       if (scenario === 'insecure') Object.defineProperty(window, 'isSecureContext', { value: false })
       else Object.defineProperty(navigator, 'mediaDevices', { value: undefined })
     }, scenario)
-    await page.goto('/')
+    await page.goto('./')
     await page.getByRole('button', { name: 'Сделать фото', exact: true }).click()
     await expect(page.getByRole('alert')).toContainText(
       scenario === 'insecure' ? 'HTTPS' : 'не поддерживает съёмку',

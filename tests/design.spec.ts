@@ -9,7 +9,7 @@ for (const [width, height] of [
 ]) {
   test(`keeps the board and photo actions accessible at ${width}×${height}`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width, height })
-    await page.goto('/')
+    await page.goto('./')
     const grid = page.getByRole('grid', { name: 'Поле судоку 9 на 9', exact: true })
     const actions = page.getByRole('region', { name: 'Проверка и решение', exact: true })
     await expect(grid).toBeVisible()
@@ -52,7 +52,7 @@ for (const [width, height] of [
 }
 
 test('defaults to fast solving and keeps editing and settings in secondary tools', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('./')
   await menuAction(page, 'Настройки решения')
   await expect(page.getByLabel('Скорость решения')).toHaveValue('fast')
   await page.keyboard.press('Escape')

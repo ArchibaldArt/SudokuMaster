@@ -16,7 +16,7 @@ for (const size of [9, 16] as const)
       if (/^https?:/.test(request.url()) && new URL(request.url()).origin !== new URL(baseURL!).origin)
         external.push(request.url())
     })
-    await page.goto('/')
+    await page.goto('./')
     const givens = getExample(size).givens
     await page.getByLabel('Загрузить фотографию судоку').setInputFiles(await printedPhoto(page, size))
     await expect(page.getByRole('button', { name: 'Распознать числа' })).toBeEnabled({ timeout: 30_000 })
@@ -78,7 +78,7 @@ for (const size of [9, 16] as const)
 test('recognizes the annotated magazine photograph and permits correcting every discrepancy', async ({
   page,
 }, testInfo) => {
-  await page.goto('/')
+  await page.goto('./')
   await page.getByLabel('Загрузить фотографию судоку').setInputFiles('tests/fixtures/magazine16.png')
   await expect(page.getByRole('button', { name: 'Распознать числа' })).toBeEnabled({ timeout: 30_000 })
   await expect(page.getByRole('dialog').getByRole('combobox')).toHaveValue('16')
@@ -185,7 +185,7 @@ test('recognizes the annotated magazine photograph and permits correcting every 
 test('requires fresh confirmation after edits and another photograph, and blocks conflicting numbers', async ({
   page,
 }) => {
-  await page.goto('/')
+  await page.goto('./')
   const photo = await printedPhoto(page, 9)
   const upload = async () => {
     await page.getByLabel('Загрузить фотографию судоку').setInputFiles(photo)
@@ -226,7 +226,7 @@ test('requires fresh confirmation after edits and another photograph, and blocks
 })
 
 test('cancels photo processing without replacing the next task', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('./')
   await page.getByLabel('Загрузить фотографию судоку').setInputFiles('tests/fixtures/magazine16.png')
   await page.getByRole('button', { name: 'Закрыть обработку фотографии' }).click()
   await menuAction(page, 'Ввести вручную')
@@ -241,7 +241,7 @@ test('cancels photo processing without replacing the next task', async ({ page }
 
 test('handles an OCR model loading failure and keeps manual entry available', async ({ page }) => {
   await page.context().route('**/vendor/tesseract/lang/**', (route) => route.abort())
-  await page.goto('/')
+  await page.goto('./')
   await page.getByLabel('Загрузить фотографию судоку').setInputFiles(await printedPhoto(page, 9))
   await expect(page.getByRole('button', { name: 'Распознать числа' })).toBeEnabled({ timeout: 30_000 })
   await page.getByRole('button', { name: 'Распознать числа' }).click()
@@ -254,7 +254,7 @@ test('handles an OCR model loading failure and keeps manual entry available', as
 })
 
 test('corrects a rotated photograph before recognition', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('./')
   await page.getByLabel('Загрузить фотографию судоку').setInputFiles(await printedPhoto(page, 9, true))
   for (let i = 0; i < 3; i++) {
     await expect(page.getByRole('button', { name: 'Повернуть', exact: true })).toBeVisible({

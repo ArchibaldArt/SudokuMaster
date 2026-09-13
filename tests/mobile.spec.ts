@@ -2,7 +2,7 @@ import { chooseExample } from './ui'
 import { test, expect } from '@playwright/test'
 
 test('fits a phone viewport and supports two-digit input and enlargement', async ({ page }, testInfo) => {
-  await page.goto('/')
+  await page.goto('./')
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
   await chooseExample(page, 16)
   await page.getByLabel('Строка 1, столбец 2', { exact: true }).fill('16')
