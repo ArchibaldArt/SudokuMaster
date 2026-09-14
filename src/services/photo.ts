@@ -1,4 +1,4 @@
-import type { BoardSize, CellRecognition, Corners, RecognitionResult } from '../core/types'
+import type { BoardSize, CellRecognition, Corners, RecognitionMode, RecognitionResult } from '../core/types'
 import { photoLayoutError } from '../core/photo-layout'
 import { emptyLayout, topology } from '../core/topology'
 import { emptyPuzzle } from '../core/types'
@@ -198,6 +198,7 @@ export class PhotoProcessor {
     size: BoardSize,
     progress: (p: PhotoProgress) => void,
     boards?: PhotoBoard[],
+    mode: RecognitionMode = 'all',
   ): Promise<RecognitionResult> {
     if (boards) {
       const error = photoLayoutError(boards, source.image.width, source.image.height)
@@ -212,6 +213,7 @@ export class PhotoProcessor {
     progress({ fraction: 0.01, label: 'Загружаем распознавание. В первый раз это займёт чуть дольше…' })
     try {
       await this.requestOCR('init', {
+        size: puzzle.size,
         paths: {
           workerPath: localAsset('vendor/tesseract/worker.min.js'),
           corePath: localAsset('vendor/tesseract/core'),
@@ -227,11 +229,12 @@ export class PhotoProcessor {
         const prefix = boards ? `Поле ${b + 1} из ${plans.length}. ` : ''
         progress({
           fraction: 0.08 + (0.92 * b) / plans.length,
-          label: `${prefix}Выравниваем поле и отделяем печатные числа…`,
+          label: `${prefix}${mode === 'printed' ? 'Выравниваем поле и убираем пометки…' : 'Выравниваем поле и подготавливаем числа…'}`,
         })
         const prepared = await this.request<Prepared>('prepare', source, {
           corners: plans[b].corners,
           size: puzzle.size,
+          mode,
         })
         this.check()
         const original = document.createElement('canvas')
@@ -295,7 +298,8 @@ export class PhotoProcessor {
           const raw = data.text.trim(),
             parsed = /^\d{1,2}$/.test(raw) ? Number(raw) : 0
           const recognizedValue = parsed >= 1 && parsed <= puzzle.size ? parsed : 0
-          const value = cell.digitHint ?? recognizedValue
+          const value =
+            cell.digitHint && (!recognizedValue || recognizedValue === 3) ? cell.digitHint : recognizedValue
           cells[index] = {
             index,
             rect: cell.rect,

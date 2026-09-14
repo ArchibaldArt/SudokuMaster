@@ -82,6 +82,7 @@ test('recognizes the annotated magazine photograph and permits correcting every 
   await page.getByLabel('Загрузить фотографию судоку').setInputFiles('tests/fixtures/magazine16.png')
   await expect(page.getByRole('button', { name: 'Распознать числа' })).toBeEnabled({ timeout: 30_000 })
   await expect(page.getByRole('dialog').getByRole('combobox')).toHaveValue('16')
+  await page.getByRole('radio', { name: 'Только печатные' }).check()
   if (process.env.OCR_DEBUG) {
     const debug = await page.evaluate(async () => {
       const path = '/src/services/photo.ts'
@@ -97,7 +98,7 @@ test('recognizes the annotated magazine photograph and permits correcting every 
       )
       const processor = new PhotoProcessor()
       try {
-        const prepared = await processor.request('prepare', source, { corners, size: 16 })
+        const prepared = await processor.request('prepare', source, { corners, size: 16, mode: 'printed' })
         const canvas = document.createElement('canvas')
         canvas.width = 1600
         canvas.height = 1000

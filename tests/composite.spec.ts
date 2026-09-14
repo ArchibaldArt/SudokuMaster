@@ -150,6 +150,7 @@ test('reviews and solves the real magazine photo after correcting OCR discrepanc
   const recognize = page.getByRole('button', { name: 'Схема верна — распознать числа', exact: true })
   await expect(recognize).toBeEnabled({ timeout: 30_000 })
   await page.getByRole('dialog').screenshot({ path: info.outputPath('magazine-layout.png') })
+  await page.getByRole('radio', { name: 'Только печатные' }).check()
   await recognize.click()
   await expect(page.getByRole('dialog')).toHaveCount(0, { timeout: 90_000 })
   await page.getByLabel('Выбрать поле', { exact: true }).selectOption('all')

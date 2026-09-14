@@ -1,0 +1,907 @@
+[
+  {
+    "id": "filled_0010",
+    "path": "resources/images/filled/filled_0010.jpg",
+    "category": "filled",
+    "split": "tune",
+    "image": "filled_0010.jpg",
+    "url": "https://raw.githubusercontent.com/francois-rozet/sudoku/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/filled/filled_0010.jpg",
+    "sha256": "408aa3f425469c718c677e082cd68425dad37d9704a81d1b436fec26ec7c53cc",
+    "all": [
+      8, 1, 3, 9, 2, 7, 4, 6, 5, 9, 6, 4, 1, 5, 3, 7, 2, 8, 7, 2, 5, 6, 8, 4, 3, 1, 9, 1, 8, 2, 3, 7, 5, 6, 9,
+      4, 4, 5, 7, 2, 9, 6, 8, 3, 1, 3, 9, 6, 4, 1, 8, 2, 5, 7, 6, 7, 1, 5, 4, 2, 9, 8, 3, 5, 3, 8, 7, 6, 9, 1,
+      4, 2, 2, 4, 9, 8, 3, 1, 5, 7, 6
+    ],
+    "printed": [
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 6, 0, 0, 0, 3, 7, 2, 0, 0, 0, 5, 6, 8, 0, 0, 0, 0, 1, 8, 0, 0, 0, 5, 6, 0,
+      0, 0, 0, 0, 0, 9, 0, 0, 0, 0, 0, 0, 6, 4, 0, 0, 0, 5, 7, 0, 0, 0, 0, 4, 2, 9, 0, 0, 0, 3, 8, 7, 0, 0, 0,
+      4, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    ],
+    "source": "https://github.com/francois-rozet/sudoku/blob/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/filled/filled_0010.jpg",
+    "author": "Baptiste Wicht / Jean Hennebert; curated by François Rozet",
+    "license": "CC BY 4.0",
+    "limits": {
+      "all": {
+        "maxErrors": 22,
+        "maxExtra": 0,
+        "minCorrect": 59
+      },
+      "printed": {
+        "maxErrors": 0,
+        "maxExtra": 0,
+        "minCorrect": 25
+      }
+    }
+  },
+  {
+    "id": "filled_0019",
+    "path": "resources/images/filled/filled_0019.jpg",
+    "category": "filled",
+    "split": "tune",
+    "image": "filled_0019.jpg",
+    "url": "https://raw.githubusercontent.com/francois-rozet/sudoku/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/filled/filled_0019.jpg",
+    "sha256": "92c971ec4c6a6e7b1d6f9be0052069c0a200255228dbb8ea33f45adb7e76d03f",
+    "all": [
+      9, 7, 3, 4, 1, 2, 6, 5, 8, 1, 5, 8, 3, 7, 6, 2, 9, 4, 4, 6, 2, 9, 8, 5, 7, 1, 3, 2, 9, 1, 8, 5, 3, 4, 6,
+      7, 5, 4, 7, 6, 2, 1, 8, 3, 9, 8, 3, 6, 7, 9, 4, 1, 2, 5, 3, 1, 4, 5, 6, 8, 9, 7, 2, 6, 8, 9, 2, 3, 7, 5,
+      4, 1, 7, 2, 5, 1, 4, 9, 3, 8, 6
+    ],
+    "printed": [
+      9, 7, 0, 0, 0, 2, 0, 0, 0, 1, 0, 8, 0, 0, 6, 0, 0, 4, 0, 0, 2, 0, 0, 0, 7, 0, 0, 0, 0, 1, 8, 5, 0, 4, 0,
+      0, 5, 4, 7, 0, 2, 1, 0, 0, 9, 8, 0, 6, 7, 9, 0, 1, 0, 5, 3, 0, 0, 5, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5,
+      4, 0, 7, 2, 0, 0, 4, 0, 0, 8, 0
+    ],
+    "source": "https://github.com/francois-rozet/sudoku/blob/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/filled/filled_0019.jpg",
+    "author": "Baptiste Wicht / Jean Hennebert; curated by François Rozet",
+    "license": "CC BY 4.0",
+    "annotationNote": "Printed givens transcribed visually; empty/ and filled/ files with this numeric suffix are different puzzles.",
+    "limits": {
+      "all": {
+        "maxErrors": 23,
+        "maxExtra": 0,
+        "minCorrect": 58
+      },
+      "printed": {
+        "maxErrors": 4,
+        "maxExtra": 0,
+        "minCorrect": 30
+      }
+    }
+  },
+  {
+    "id": "filled_0032",
+    "path": "resources/images/filled/filled_0032.jpg",
+    "category": "filled",
+    "split": "tune",
+    "image": "filled_0032.jpg",
+    "url": "https://raw.githubusercontent.com/francois-rozet/sudoku/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/filled/filled_0032.jpg",
+    "sha256": "bba14e217db41fc48e1c29469fbf72f54205809df0dd68d6345642d3c299c7ed",
+    "all": [
+      7, 2, 1, 8, 4, 6, 5, 9, 3, 3, 4, 8, 2, 5, 9, 6, 1, 7, 5, 9, 6, 3, 1, 7, 2, 8, 4, 2, 6, 5, 1, 3, 4, 8, 7,
+      9, 4, 3, 9, 7, 8, 2, 1, 6, 5, 1, 8, 7, 6, 9, 5, 3, 4, 2, 6, 1, 4, 9, 2, 3, 7, 5, 8, 8, 5, 2, 4, 7, 1, 9,
+      3, 6, 9, 7, 3, 5, 6, 8, 4, 2, 1
+    ],
+    "printed": [
+      7, 2, 1, 8, 4, 0, 0, 0, 0, 3, 0, 8, 2, 0, 9, 6, 0, 7, 5, 0, 0, 0, 0, 7, 0, 0, 4, 2, 0, 0, 1, 0, 4, 8, 0,
+      0, 4, 3, 9, 0, 0, 0, 0, 0, 5, 0, 8, 7, 0, 0, 0, 3, 0, 2, 0, 0, 0, 0, 0, 0, 0, 5, 8, 0, 5, 2, 0, 7, 0, 0,
+      3, 0, 9, 0, 3, 5, 0, 0, 0, 0, 0
+    ],
+    "source": "https://github.com/francois-rozet/sudoku/blob/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/filled/filled_0032.jpg",
+    "author": "Baptiste Wicht / Jean Hennebert; curated by François Rozet",
+    "license": "CC BY 4.0",
+    "annotationNote": "Printed givens transcribed visually; empty/ and filled/ files with this numeric suffix are different puzzles.",
+    "limits": {
+      "all": {
+        "maxErrors": 29,
+        "maxExtra": 0,
+        "minCorrect": 52
+      },
+      "printed": {
+        "maxErrors": 2,
+        "maxExtra": 1,
+        "minCorrect": 34
+      }
+    }
+  },
+  {
+    "id": "filled_0035",
+    "path": "resources/images/filled/filled_0035.jpg",
+    "category": "filled",
+    "split": "tune",
+    "image": "filled_0035.jpg",
+    "url": "https://raw.githubusercontent.com/francois-rozet/sudoku/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/filled/filled_0035.jpg",
+    "sha256": "d6b46d6f23b37abb1ac8716d11cfa3038d68fda90cfaead83dfde0a5eea1171a",
+    "all": [
+      3, 7, 1, 4, 5, 8, 6, 2, 9, 4, 9, 5, 7, 2, 6, 3, 1, 8, 6, 8, 2, 1, 9, 3, 7, 4, 5, 7, 4, 6, 9, 1, 5, 8, 3,
+      2, 9, 2, 8, 3, 6, 4, 5, 7, 1, 5, 1, 3, 8, 7, 2, 4, 9, 6, 2, 6, 4, 5, 3, 1, 9, 8, 7, 1, 3, 7, 6, 8, 9, 2,
+      5, 4, 8, 5, 9, 2, 4, 7, 1, 6, 3
+    ],
+    "printed": [
+      0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 5, 7, 0, 6, 3, 0, 0, 0, 8, 0, 0, 9, 0, 0, 4, 0, 0, 4, 0, 0, 1, 0, 0, 3,
+      0, 9, 0, 8, 0, 0, 0, 5, 0, 1, 0, 1, 0, 0, 7, 0, 0, 9, 0, 0, 6, 0, 0, 3, 0, 0, 8, 0, 0, 0, 7, 6, 0, 9, 2,
+      0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0
+    ],
+    "source": "https://github.com/francois-rozet/sudoku/blob/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/filled/filled_0035.jpg",
+    "author": "Baptiste Wicht / Jean Hennebert; curated by François Rozet",
+    "license": "CC BY 4.0",
+    "annotationNote": "Printed givens transcribed visually; empty/ and filled/ files with this numeric suffix are different puzzles.",
+    "limits": {
+      "all": {
+        "maxErrors": 26,
+        "maxExtra": 0,
+        "minCorrect": 55
+      },
+      "printed": {
+        "maxErrors": 0,
+        "maxExtra": 0,
+        "minCorrect": 26
+      }
+    }
+  },
+  {
+    "id": "filled_0046",
+    "path": "resources/images/filled/filled_0046.jpg",
+    "category": "filled",
+    "split": "test",
+    "image": "filled_0046.jpg",
+    "url": "https://raw.githubusercontent.com/francois-rozet/sudoku/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/filled/filled_0046.jpg",
+    "sha256": "148d0e073ab24b7bca0e309ea5a74822dd193f9865cbb521fad8bc52499e6141",
+    "all": [
+      8, 4, 7, 9, 1, 2, 6, 3, 5, 1, 3, 5, 8, 6, 4, 2, 7, 9, 9, 2, 6, 7, 5, 3, 8, 4, 1, 5, 7, 9, 4, 2, 6, 3, 1,
+      8, 3, 1, 8, 5, 9, 7, 4, 2, 6, 4, 6, 2, 3, 8, 1, 5, 9, 7, 7, 8, 1, 2, 3, 5, 9, 6, 4, 2, 9, 4, 6, 7, 8, 1,
+      5, 3, 6, 5, 3, 1, 4, 9, 7, 8, 2
+    ],
+    "printed": [
+      0, 0, 0, 0, 1, 2, 6, 3, 5, 1, 3, 5, 8, 0, 4, 0, 0, 0, 0, 0, 6, 0, 0, 0, 8, 0, 0, 0, 0, 9, 0, 0, 0, 0, 1,
+      0, 0, 1, 0, 5, 9, 0, 0, 2, 0, 4, 6, 0, 0, 8, 1, 5, 9, 0, 7, 0, 0, 2, 3, 0, 0, 0, 4, 2, 0, 0, 0, 0, 0, 1,
+      0, 0, 6, 0, 3, 1, 0, 9, 0, 8, 2
+    ],
+    "source": "https://github.com/francois-rozet/sudoku/blob/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/filled/filled_0046.jpg",
+    "author": "Baptiste Wicht / Jean Hennebert; curated by François Rozet",
+    "license": "CC BY 4.0",
+    "limits": {
+      "all": {
+        "maxErrors": 19,
+        "maxExtra": 0,
+        "minCorrect": 62
+      },
+      "printed": {
+        "maxErrors": 11,
+        "maxExtra": 11,
+        "minCorrect": 36
+      }
+    }
+  },
+  {
+    "id": "filled_0144",
+    "path": "resources/images/filled/filled_0144.jpg",
+    "category": "filled",
+    "split": "test",
+    "image": "filled_0144.jpg",
+    "url": "https://raw.githubusercontent.com/francois-rozet/sudoku/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/filled/filled_0144.jpg",
+    "sha256": "8d29606ad890a0eb85461d9587fae6af35a405d7ab922aac7265e6516e50c8f4",
+    "all": [
+      3, 9, 1, 6, 8, 2, 5, 4, 7, 7, 6, 4, 3, 5, 9, 2, 1, 8, 2, 8, 5, 4, 1, 7, 3, 6, 9, 9, 7, 2, 8, 4, 6, 1, 5,
+      3, 8, 4, 3, 1, 2, 5, 9, 7, 6, 5, 1, 6, 7, 9, 3, 8, 2, 4, 4, 2, 9, 5, 6, 8, 7, 3, 1, 6, 3, 8, 2, 7, 1, 4,
+      9, 5, 1, 5, 7, 9, 3, 4, 6, 8, 2
+    ],
+    "printed": [
+      0, 9, 0, 0, 8, 0, 0, 4, 0, 7, 0, 0, 3, 0, 9, 0, 0, 8, 0, 0, 5, 0, 0, 0, 3, 0, 0, 0, 7, 0, 0, 0, 0, 0, 5,
+      0, 8, 0, 0, 0, 2, 0, 0, 0, 6, 0, 1, 0, 0, 0, 0, 0, 2, 0, 0, 0, 9, 0, 0, 0, 7, 0, 0, 6, 0, 0, 2, 0, 1, 0,
+      0, 5, 0, 5, 0, 0, 3, 0, 0, 8, 0
+    ],
+    "source": "https://github.com/francois-rozet/sudoku/blob/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/filled/filled_0144.jpg",
+    "author": "Baptiste Wicht / Jean Hennebert; curated by François Rozet",
+    "license": "CC BY 4.0",
+    "limits": {
+      "all": {
+        "maxErrors": 30,
+        "maxExtra": 0,
+        "minCorrect": 51
+      },
+      "printed": {
+        "maxErrors": 0,
+        "maxExtra": 0,
+        "minCorrect": 25
+      }
+    }
+  },
+  {
+    "id": "empty_0005",
+    "path": "resources/images/empty/empty_0005.jpg",
+    "category": "empty",
+    "split": "tune",
+    "image": "empty_0005.jpg",
+    "url": "https://raw.githubusercontent.com/francois-rozet/sudoku/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/empty/empty_0005.jpg",
+    "sha256": "455a670801c7c6be5364d7e7cb831486b0c65731fd07aed7a72d2c6add971eaa",
+    "all": [
+      0, 9, 0, 0, 5, 4, 2, 7, 6, 7, 0, 0, 8, 0, 6, 5, 0, 0, 5, 6, 0, 2, 0, 9, 1, 0, 8, 0, 0, 0, 0, 4, 0, 0, 2,
+      9, 0, 7, 0, 0, 1, 0, 8, 0, 5, 2, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 8, 0, 0, 7, 0, 4, 2, 0, 0, 0, 6, 8, 0, 0,
+      0, 3, 6, 0, 7, 0, 0, 0, 0, 0, 0
+    ],
+    "printed": [
+      0, 9, 0, 0, 5, 4, 2, 7, 6, 7, 0, 0, 8, 0, 6, 5, 0, 0, 5, 6, 0, 2, 0, 9, 1, 0, 8, 0, 0, 0, 0, 4, 0, 0, 2,
+      9, 0, 7, 0, 0, 1, 0, 8, 0, 5, 2, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 8, 0, 0, 7, 0, 4, 2, 0, 0, 0, 6, 8, 0, 0,
+      0, 3, 6, 0, 7, 0, 0, 0, 0, 0, 0
+    ],
+    "source": "https://github.com/francois-rozet/sudoku/blob/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/empty/empty_0005.jpg",
+    "author": "Baptiste Wicht / Jean Hennebert; curated by François Rozet",
+    "license": "CC BY 4.0",
+    "limits": {
+      "all": {
+        "maxErrors": 0,
+        "maxExtra": 0,
+        "minCorrect": 34
+      }
+    }
+  },
+  {
+    "id": "empty_0009",
+    "path": "resources/images/empty/empty_0009.jpg",
+    "category": "empty",
+    "split": "tune",
+    "image": "empty_0009.jpg",
+    "url": "https://raw.githubusercontent.com/francois-rozet/sudoku/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/empty/empty_0009.jpg",
+    "sha256": "4b49cadd8fb0e059727983366c789c91a65bcf6ec9d6491b7fa4152be46a4b37",
+    "all": [
+      0, 9, 5, 8, 0, 0, 0, 0, 0, 2, 0, 0, 3, 0, 0, 4, 0, 0, 7, 0, 0, 0, 2, 0, 0, 3, 0, 4, 8, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 2, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 6, 0, 4, 0, 0, 3, 0, 0, 0, 7, 0, 0, 6, 0, 0, 4, 0,
+      0, 5, 0, 0, 0, 0, 0, 9, 2, 6, 0
+    ],
+    "printed": [
+      0, 9, 5, 8, 0, 0, 0, 0, 0, 2, 0, 0, 3, 0, 0, 4, 0, 0, 7, 0, 0, 0, 2, 0, 0, 3, 0, 4, 8, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 2, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 6, 0, 4, 0, 0, 3, 0, 0, 0, 7, 0, 0, 6, 0, 0, 4, 0,
+      0, 5, 0, 0, 0, 0, 0, 9, 2, 6, 0
+    ],
+    "source": "https://github.com/francois-rozet/sudoku/blob/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/empty/empty_0009.jpg",
+    "author": "Baptiste Wicht / Jean Hennebert; curated by François Rozet",
+    "license": "CC BY 4.0",
+    "limits": {
+      "all": {
+        "maxErrors": 0,
+        "maxExtra": 0,
+        "minCorrect": 24
+      }
+    }
+  },
+  {
+    "id": "empty_0020",
+    "path": "resources/images/empty/empty_0020.jpg",
+    "category": "empty",
+    "split": "tune",
+    "image": "empty_0020.jpg",
+    "url": "https://raw.githubusercontent.com/francois-rozet/sudoku/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/empty/empty_0020.jpg",
+    "sha256": "c2938628bca2b32f34a1c99cfdbaa15afe1b432562a5dceec7860744c9c6efc0",
+    "all": [
+      0, 0, 2, 0, 3, 0, 6, 0, 0, 0, 0, 0, 4, 0, 5, 0, 0, 0, 8, 0, 4, 0, 0, 0, 7, 0, 2, 0, 2, 0, 0, 0, 0, 0, 8,
+      0, 3, 0, 0, 0, 0, 0, 0, 0, 6, 0, 6, 0, 0, 0, 0, 0, 1, 0, 5, 0, 8, 0, 0, 0, 1, 0, 7, 0, 0, 0, 7, 0, 3, 0,
+      0, 0, 0, 0, 1, 0, 6, 0, 4, 0, 0
+    ],
+    "printed": [
+      0, 0, 2, 0, 3, 0, 6, 0, 0, 0, 0, 0, 4, 0, 5, 0, 0, 0, 8, 0, 4, 0, 0, 0, 7, 0, 2, 0, 2, 0, 0, 0, 0, 0, 8,
+      0, 3, 0, 0, 0, 0, 0, 0, 0, 6, 0, 6, 0, 0, 0, 0, 0, 1, 0, 5, 0, 8, 0, 0, 0, 1, 0, 7, 0, 0, 0, 7, 0, 3, 0,
+      0, 0, 0, 0, 1, 0, 6, 0, 4, 0, 0
+    ],
+    "source": "https://github.com/francois-rozet/sudoku/blob/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/empty/empty_0020.jpg",
+    "author": "Baptiste Wicht / Jean Hennebert; curated by François Rozet",
+    "license": "CC BY 4.0",
+    "limits": {
+      "all": {
+        "maxErrors": 0,
+        "maxExtra": 0,
+        "minCorrect": 24
+      }
+    }
+  },
+  {
+    "id": "empty_0022",
+    "path": "resources/images/empty/empty_0022.jpg",
+    "category": "empty",
+    "split": "tune",
+    "image": "empty_0022.jpg",
+    "url": "https://raw.githubusercontent.com/francois-rozet/sudoku/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/empty/empty_0022.jpg",
+    "sha256": "e4f61ba688f1a1d7edeed17a395b6070605f87d2c2f092f4e5fe89f0896210b9",
+    "all": [
+      0, 0, 8, 3, 7, 0, 0, 0, 0, 6, 0, 7, 2, 0, 0, 0, 0, 4, 0, 3, 0, 4, 0, 0, 7, 2, 6, 2, 0, 4, 0, 0, 0, 0, 1,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 6, 0, 3, 8, 9, 1, 0, 0, 3, 0, 7, 0, 5, 0, 0, 0, 0, 1, 9,
+      0, 2, 0, 0, 0, 0, 5, 7, 8, 0, 0
+    ],
+    "printed": [
+      0, 0, 8, 3, 7, 0, 0, 0, 0, 6, 0, 7, 2, 0, 0, 0, 0, 4, 0, 3, 0, 4, 0, 0, 7, 2, 6, 2, 0, 4, 0, 0, 0, 0, 1,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 6, 0, 3, 8, 9, 1, 0, 0, 3, 0, 7, 0, 5, 0, 0, 0, 0, 1, 9,
+      0, 2, 0, 0, 0, 0, 5, 7, 8, 0, 0
+    ],
+    "source": "https://github.com/francois-rozet/sudoku/blob/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/empty/empty_0022.jpg",
+    "author": "Baptiste Wicht / Jean Hennebert; curated by François Rozet",
+    "license": "CC BY 4.0",
+    "limits": {
+      "all": {
+        "maxErrors": 0,
+        "maxExtra": 0,
+        "minCorrect": 30
+      }
+    }
+  },
+  {
+    "id": "empty_0042",
+    "path": "resources/images/empty/empty_0042.jpg",
+    "category": "empty",
+    "split": "tune",
+    "image": "empty_0042.jpg",
+    "url": "https://raw.githubusercontent.com/francois-rozet/sudoku/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/empty/empty_0042.jpg",
+    "sha256": "a2491d4b776ac52128390955d1404d09d974c792c4bf61caa371d2e6d5c7f0b6",
+    "all": [
+      4, 0, 0, 8, 0, 2, 0, 0, 6, 0, 6, 0, 0, 1, 0, 0, 4, 0, 0, 3, 8, 0, 0, 0, 1, 7, 0, 0, 0, 0, 1, 2, 7, 0, 0,
+      0, 7, 0, 0, 3, 0, 4, 0, 0, 1, 0, 0, 0, 5, 8, 9, 0, 0, 0, 0, 7, 4, 0, 0, 0, 2, 1, 0, 0, 2, 0, 0, 3, 0, 0,
+      6, 0, 9, 0, 0, 2, 0, 8, 0, 0, 5
+    ],
+    "printed": [
+      4, 0, 0, 8, 0, 2, 0, 0, 6, 0, 6, 0, 0, 1, 0, 0, 4, 0, 0, 3, 8, 0, 0, 0, 1, 7, 0, 0, 0, 0, 1, 2, 7, 0, 0,
+      0, 7, 0, 0, 3, 0, 4, 0, 0, 1, 0, 0, 0, 5, 8, 9, 0, 0, 0, 0, 7, 4, 0, 0, 0, 2, 1, 0, 0, 2, 0, 0, 3, 0, 0,
+      6, 0, 9, 0, 0, 2, 0, 8, 0, 0, 5
+    ],
+    "source": "https://github.com/francois-rozet/sudoku/blob/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/empty/empty_0042.jpg",
+    "author": "Baptiste Wicht / Jean Hennebert; curated by François Rozet",
+    "license": "CC BY 4.0",
+    "limits": {
+      "all": {
+        "maxErrors": 0,
+        "maxExtra": 0,
+        "minCorrect": 32
+      }
+    }
+  },
+  {
+    "id": "empty_0045",
+    "path": "resources/images/empty/empty_0045.jpg",
+    "category": "empty",
+    "split": "tune",
+    "image": "empty_0045.jpg",
+    "url": "https://raw.githubusercontent.com/francois-rozet/sudoku/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/empty/empty_0045.jpg",
+    "sha256": "cba141a2c90b35a23969ea0e0b5a44cc65c7b72db91867982e428de0b0667a93",
+    "all": [
+      3, 0, 0, 0, 9, 0, 0, 0, 2, 0, 1, 0, 0, 0, 7, 4, 9, 0, 0, 4, 0, 8, 1, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 7, 0,
+      0, 7, 0, 2, 0, 0, 0, 5, 0, 1, 0, 0, 5, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 2, 8, 0, 6, 0, 0, 2, 9, 7, 0, 0, 0,
+      3, 0, 6, 0, 0, 0, 3, 0, 0, 0, 4
+    ],
+    "printed": [
+      3, 0, 0, 0, 9, 0, 0, 0, 2, 0, 1, 0, 0, 0, 7, 4, 9, 0, 0, 4, 0, 8, 1, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 7, 0,
+      0, 7, 0, 2, 0, 0, 0, 5, 0, 1, 0, 0, 5, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 2, 8, 0, 6, 0, 0, 2, 9, 7, 0, 0, 0,
+      3, 0, 6, 0, 0, 0, 3, 0, 0, 0, 4
+    ],
+    "source": "https://github.com/francois-rozet/sudoku/blob/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/empty/empty_0045.jpg",
+    "author": "Baptiste Wicht / Jean Hennebert; curated by François Rozet",
+    "license": "CC BY 4.0",
+    "limits": {
+      "all": {
+        "maxErrors": 0,
+        "maxExtra": 0,
+        "minCorrect": 28
+      }
+    }
+  },
+  {
+    "id": "empty_0054",
+    "path": "resources/images/empty/empty_0054.jpg",
+    "category": "empty",
+    "split": "tune",
+    "image": "empty_0054.jpg",
+    "url": "https://raw.githubusercontent.com/francois-rozet/sudoku/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/empty/empty_0054.jpg",
+    "sha256": "63f8d85d0490353b6c74ee3b5f05f8ec471f077b02a596ee8aeffe8352b66655",
+    "all": [
+      0, 0, 2, 0, 0, 9, 1, 0, 5, 0, 8, 0, 7, 0, 3, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 5, 0, 0, 4, 0, 0, 0,
+      0, 7, 0, 0, 9, 0, 8, 0, 0, 3, 0, 0, 0, 0, 1, 0, 0, 6, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 2, 0, 1, 0,
+      9, 0, 9, 0, 3, 8, 0, 0, 6, 0, 0
+    ],
+    "printed": [
+      0, 0, 2, 0, 0, 9, 1, 0, 5, 0, 8, 0, 7, 0, 3, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 5, 0, 0, 4, 0, 0, 0,
+      0, 7, 0, 0, 9, 0, 8, 0, 0, 3, 0, 0, 0, 0, 1, 0, 0, 6, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 2, 0, 1, 0,
+      9, 0, 9, 0, 3, 8, 0, 0, 6, 0, 0
+    ],
+    "source": "https://github.com/francois-rozet/sudoku/blob/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/empty/empty_0054.jpg",
+    "author": "Baptiste Wicht / Jean Hennebert; curated by François Rozet",
+    "license": "CC BY 4.0",
+    "limits": {
+      "all": {
+        "maxErrors": 1,
+        "maxExtra": 0,
+        "minCorrect": 25
+      }
+    }
+  },
+  {
+    "id": "empty_0137",
+    "path": "resources/images/empty/empty_0137.jpg",
+    "category": "empty",
+    "split": "test",
+    "image": "empty_0137.jpg",
+    "url": "https://raw.githubusercontent.com/francois-rozet/sudoku/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/empty/empty_0137.jpg",
+    "sha256": "2344ab32e76310f079a5eaefdfe975d93e3cd6b1ad22030099b165985d820c97",
+    "all": [
+      0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 4, 2, 0, 0, 8, 0, 0, 0, 3, 0, 7, 0, 6, 4, 0, 3, 1, 0, 0, 0, 9, 0,
+      0, 0, 9, 0, 0, 0, 0, 0, 2, 0, 0, 0, 5, 0, 0, 0, 3, 7, 0, 3, 8, 0, 7, 0, 5, 0, 0, 0, 6, 0, 0, 1, 2, 0, 7,
+      0, 0, 0, 0, 0, 0, 0, 0, 6, 5, 0
+    ],
+    "printed": [
+      0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 4, 2, 0, 0, 8, 0, 0, 0, 3, 0, 7, 0, 6, 4, 0, 3, 1, 0, 0, 0, 9, 0,
+      0, 0, 9, 0, 0, 0, 0, 0, 2, 0, 0, 0, 5, 0, 0, 0, 3, 7, 0, 3, 8, 0, 7, 0, 5, 0, 0, 0, 6, 0, 0, 1, 2, 0, 7,
+      0, 0, 0, 0, 0, 0, 0, 0, 6, 5, 0
+    ],
+    "source": "https://github.com/francois-rozet/sudoku/blob/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/empty/empty_0137.jpg",
+    "author": "Baptiste Wicht / Jean Hennebert; curated by François Rozet",
+    "license": "CC BY 4.0",
+    "limits": {
+      "all": {
+        "maxErrors": 0,
+        "maxExtra": 0,
+        "minCorrect": 28
+      }
+    }
+  },
+  {
+    "id": "empty_0139",
+    "path": "resources/images/empty/empty_0139.jpg",
+    "category": "empty",
+    "split": "test",
+    "image": "empty_0139.jpg",
+    "url": "https://raw.githubusercontent.com/francois-rozet/sudoku/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/empty/empty_0139.jpg",
+    "sha256": "c352b7e1959066f0951d0cb2f6b6194f4798129b779c1225d1e6777dbd9a203b",
+    "all": [
+      0, 3, 0, 0, 2, 0, 0, 4, 0, 1, 0, 9, 7, 0, 6, 3, 0, 8, 0, 0, 0, 1, 0, 3, 0, 0, 0, 8, 0, 1, 0, 0, 0, 4, 0,
+      2, 0, 6, 0, 0, 0, 0, 0, 7, 0, 3, 0, 7, 0, 0, 0, 6, 0, 5, 0, 0, 0, 2, 0, 4, 0, 0, 0, 6, 0, 2, 3, 0, 5, 9,
+      0, 1, 0, 7, 0, 0, 9, 0, 0, 6, 0
+    ],
+    "printed": [
+      0, 3, 0, 0, 2, 0, 0, 4, 0, 1, 0, 9, 7, 0, 6, 3, 0, 8, 0, 0, 0, 1, 0, 3, 0, 0, 0, 8, 0, 1, 0, 0, 0, 4, 0,
+      2, 0, 6, 0, 0, 0, 0, 0, 7, 0, 3, 0, 7, 0, 0, 0, 6, 0, 5, 0, 0, 0, 2, 0, 4, 0, 0, 0, 6, 0, 2, 3, 0, 5, 9,
+      0, 1, 0, 7, 0, 0, 9, 0, 0, 6, 0
+    ],
+    "source": "https://github.com/francois-rozet/sudoku/blob/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/empty/empty_0139.jpg",
+    "author": "Baptiste Wicht / Jean Hennebert; curated by François Rozet",
+    "license": "CC BY 4.0",
+    "limits": {
+      "all": {
+        "maxErrors": 0,
+        "maxExtra": 0,
+        "minCorrect": 32
+      }
+    }
+  },
+  {
+    "id": "empty_0140",
+    "path": "resources/images/empty/empty_0140.jpg",
+    "category": "empty",
+    "split": "test",
+    "image": "empty_0140.jpg",
+    "url": "https://raw.githubusercontent.com/francois-rozet/sudoku/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/empty/empty_0140.jpg",
+    "sha256": "e6d10a91856d529ef2b0468677d6bf21e8e64f5484d3b1b562116d52ca84b848",
+    "all": [
+      0, 3, 0, 0, 2, 0, 0, 4, 0, 1, 0, 9, 7, 0, 6, 3, 0, 8, 0, 0, 0, 1, 0, 3, 0, 0, 0, 8, 0, 1, 0, 0, 0, 4, 0,
+      2, 0, 6, 0, 0, 0, 0, 0, 7, 0, 3, 0, 7, 0, 0, 0, 6, 0, 5, 0, 0, 0, 2, 0, 4, 0, 0, 0, 6, 0, 2, 3, 0, 5, 9,
+      0, 1, 0, 7, 0, 0, 9, 0, 0, 6, 0
+    ],
+    "printed": [
+      0, 3, 0, 0, 2, 0, 0, 4, 0, 1, 0, 9, 7, 0, 6, 3, 0, 8, 0, 0, 0, 1, 0, 3, 0, 0, 0, 8, 0, 1, 0, 0, 0, 4, 0,
+      2, 0, 6, 0, 0, 0, 0, 0, 7, 0, 3, 0, 7, 0, 0, 0, 6, 0, 5, 0, 0, 0, 2, 0, 4, 0, 0, 0, 6, 0, 2, 3, 0, 5, 9,
+      0, 1, 0, 7, 0, 0, 9, 0, 0, 6, 0
+    ],
+    "source": "https://github.com/francois-rozet/sudoku/blob/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/empty/empty_0140.jpg",
+    "author": "Baptiste Wicht / Jean Hennebert; curated by François Rozet",
+    "license": "CC BY 4.0",
+    "limits": {
+      "all": {
+        "maxErrors": 1,
+        "maxExtra": 0,
+        "minCorrect": 31
+      }
+    }
+  },
+  {
+    "id": "empty_0141",
+    "path": "resources/images/empty/empty_0141.jpg",
+    "category": "empty",
+    "split": "test",
+    "image": "empty_0141.jpg",
+    "url": "https://raw.githubusercontent.com/francois-rozet/sudoku/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/empty/empty_0141.jpg",
+    "sha256": "504518372970767a5359f5a4884b88847f312050a5ca28b57a0e578fc007c9d5",
+    "all": [
+      0, 0, 0, 6, 0, 0, 0, 4, 2, 0, 4, 0, 2, 0, 0, 0, 1, 0, 0, 0, 9, 0, 0, 3, 5, 0, 0, 5, 0, 0, 0, 4, 9, 0, 0,
+      0, 0, 1, 7, 0, 0, 0, 4, 8, 0, 0, 0, 0, 5, 7, 0, 0, 0, 6, 0, 0, 6, 1, 0, 0, 7, 0, 0, 0, 3, 0, 0, 0, 4, 0,
+      5, 0, 2, 9, 0, 0, 0, 8, 0, 0, 0
+    ],
+    "printed": [
+      0, 0, 0, 6, 0, 0, 0, 4, 2, 0, 4, 0, 2, 0, 0, 0, 1, 0, 0, 0, 9, 0, 0, 3, 5, 0, 0, 5, 0, 0, 0, 4, 9, 0, 0,
+      0, 0, 1, 7, 0, 0, 0, 4, 8, 0, 0, 0, 0, 5, 7, 0, 0, 0, 6, 0, 0, 6, 1, 0, 0, 7, 0, 0, 0, 3, 0, 0, 0, 4, 0,
+      5, 0, 2, 9, 0, 0, 0, 8, 0, 0, 0
+    ],
+    "source": "https://github.com/francois-rozet/sudoku/blob/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/empty/empty_0141.jpg",
+    "author": "Baptiste Wicht / Jean Hennebert; curated by François Rozet",
+    "license": "CC BY 4.0",
+    "limits": {
+      "all": {
+        "maxErrors": 9,
+        "maxExtra": 0,
+        "minCorrect": 19
+      }
+    }
+  },
+  {
+    "id": "blurry_0057",
+    "path": "resources/images/blurry/blurry_0057.jpg",
+    "category": "blurry",
+    "split": "tune",
+    "image": "blurry_0057.jpg",
+    "url": "https://raw.githubusercontent.com/francois-rozet/sudoku/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/blurry/blurry_0057.jpg",
+    "sha256": "16f264c55c9d45a76ceb34ab5c8c512b61c845bdb5e011c30dccd3bb3b94210a",
+    "all": [
+      0, 0, 0, 7, 0, 0, 0, 8, 0, 0, 9, 0, 0, 0, 3, 1, 0, 0, 0, 0, 6, 8, 0, 5, 0, 7, 0, 0, 2, 0, 6, 0, 0, 0, 4,
+      9, 0, 0, 0, 2, 0, 0, 0, 5, 0, 0, 0, 8, 0, 4, 0, 0, 0, 7, 0, 0, 0, 9, 0, 0, 0, 3, 0, 3, 7, 0, 0, 0, 0, 0,
+      0, 6, 1, 0, 5, 0, 0, 4, 0, 0, 0
+    ],
+    "printed": [
+      0, 0, 0, 7, 0, 0, 0, 8, 0, 0, 9, 0, 0, 0, 3, 1, 0, 0, 0, 0, 6, 8, 0, 5, 0, 7, 0, 0, 2, 0, 6, 0, 0, 0, 4,
+      9, 0, 0, 0, 2, 0, 0, 0, 5, 0, 0, 0, 8, 0, 4, 0, 0, 0, 7, 0, 0, 0, 9, 0, 0, 0, 3, 0, 3, 7, 0, 0, 0, 0, 0,
+      0, 6, 1, 0, 5, 0, 0, 4, 0, 0, 0
+    ],
+    "source": "https://github.com/francois-rozet/sudoku/blob/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/blurry/blurry_0057.jpg",
+    "author": "Baptiste Wicht / Jean Hennebert; curated by François Rozet",
+    "license": "CC BY 4.0",
+    "limits": {
+      "all": {
+        "maxErrors": 4,
+        "maxExtra": 2,
+        "minCorrect": 24
+      }
+    }
+  },
+  {
+    "id": "blurry_0092",
+    "path": "resources/images/blurry/blurry_0092.jpg",
+    "category": "blurry",
+    "split": "tune",
+    "image": "blurry_0092.jpg",
+    "url": "https://raw.githubusercontent.com/francois-rozet/sudoku/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/blurry/blurry_0092.jpg",
+    "sha256": "77a6e5cb29d21cc032b106ed0e522e4748095911a573011a97d085970e380c1e",
+    "all": [
+      1, 0, 0, 0, 3, 2, 0, 9, 0, 0, 0, 9, 0, 0, 0, 0, 0, 6, 0, 0, 0, 9, 8, 0, 0, 3, 0, 5, 0, 3, 0, 0, 7, 0, 0,
+      1, 7, 0, 0, 2, 1, 3, 0, 0, 4, 6, 0, 0, 4, 0, 0, 3, 0, 8, 0, 3, 0, 0, 7, 1, 0, 0, 0, 4, 0, 0, 0, 0, 0, 5,
+      0, 0, 0, 2, 0, 5, 9, 0, 0, 0, 3
+    ],
+    "printed": [
+      1, 0, 0, 0, 3, 2, 0, 9, 0, 0, 0, 9, 0, 0, 0, 0, 0, 6, 0, 0, 0, 9, 8, 0, 0, 3, 0, 5, 0, 3, 0, 0, 7, 0, 0,
+      1, 7, 0, 0, 2, 1, 3, 0, 0, 4, 6, 0, 0, 4, 0, 0, 3, 0, 8, 0, 3, 0, 0, 7, 1, 0, 0, 0, 4, 0, 0, 0, 0, 0, 5,
+      0, 0, 0, 2, 0, 5, 9, 0, 0, 0, 3
+    ],
+    "source": "https://github.com/francois-rozet/sudoku/blob/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/blurry/blurry_0092.jpg",
+    "author": "Baptiste Wicht / Jean Hennebert; curated by François Rozet",
+    "license": "CC BY 4.0",
+    "limits": {
+      "all": {
+        "maxErrors": 1,
+        "maxExtra": 0,
+        "minCorrect": 30
+      }
+    }
+  },
+  {
+    "id": "blurry_0174",
+    "path": "resources/images/blurry/blurry_0174.jpg",
+    "category": "blurry",
+    "split": "tune",
+    "image": "blurry_0174.jpg",
+    "url": "https://raw.githubusercontent.com/francois-rozet/sudoku/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/blurry/blurry_0174.jpg",
+    "sha256": "a3e23d22af3bf5bbea84deecf76b61134b91df244a7bdff0044b8c3200d7f116",
+    "all": [
+      0, 0, 0, 0, 0, 9, 0, 0, 0, 2, 0, 0, 0, 8, 3, 0, 4, 5, 0, 7, 8, 0, 0, 0, 0, 0, 3, 1, 0, 0, 8, 0, 7, 9, 3,
+      0, 0, 8, 9, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 9, 6, 4, 0, 0, 0, 4, 2, 7, 0, 0, 8, 0,
+      6, 9, 0, 0, 0, 0, 0, 0, 1, 8, 4
+    ],
+    "printed": [
+      0, 0, 0, 0, 0, 9, 0, 0, 0, 2, 0, 0, 0, 8, 3, 0, 4, 5, 0, 7, 8, 0, 0, 0, 0, 0, 3, 1, 0, 0, 8, 0, 7, 9, 3,
+      0, 0, 8, 9, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 9, 6, 4, 0, 0, 0, 4, 2, 7, 0, 0, 8, 0,
+      6, 9, 0, 0, 0, 0, 0, 0, 1, 8, 4
+    ],
+    "source": "https://github.com/francois-rozet/sudoku/blob/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/blurry/blurry_0174.jpg",
+    "author": "Baptiste Wicht / Jean Hennebert; curated by François Rozet",
+    "license": "CC BY 4.0",
+    "limits": {
+      "all": {
+        "maxErrors": 2,
+        "maxExtra": 0,
+        "minCorrect": 28
+      }
+    }
+  },
+  {
+    "id": "blurry_0197",
+    "path": "resources/images/blurry/blurry_0197.jpg",
+    "category": "blurry",
+    "split": "test",
+    "image": "blurry_0197.jpg",
+    "url": "https://raw.githubusercontent.com/francois-rozet/sudoku/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/blurry/blurry_0197.jpg",
+    "sha256": "4f7e652ffab5034b8f9481df70471a32993c50601f24c34b433f7c1d2d50e206",
+    "all": [
+      0, 0, 1, 0, 3, 0, 0, 0, 8, 0, 0, 4, 0, 6, 0, 5, 0, 0, 9, 0, 0, 0, 0, 0, 2, 7, 0, 8, 3, 0, 0, 5, 0, 0, 1,
+      0, 6, 0, 5, 0, 9, 3, 0, 4, 0, 0, 0, 0, 7, 0, 0, 8, 0, 5, 0, 0, 0, 0, 0, 4, 9, 0, 0, 7, 0, 3, 0, 0, 5, 0,
+      0, 6, 0, 2, 0, 0, 0, 0, 3, 8, 0
+    ],
+    "printed": [
+      0, 0, 1, 0, 3, 0, 0, 0, 8, 0, 0, 4, 0, 6, 0, 5, 0, 0, 9, 0, 0, 0, 0, 0, 2, 7, 0, 8, 3, 0, 0, 5, 0, 0, 1,
+      0, 6, 0, 5, 0, 9, 3, 0, 4, 0, 0, 0, 0, 7, 0, 0, 8, 0, 5, 0, 0, 0, 0, 0, 4, 9, 0, 0, 7, 0, 3, 0, 0, 5, 0,
+      0, 6, 0, 2, 0, 0, 0, 0, 3, 8, 0
+    ],
+    "source": "https://github.com/francois-rozet/sudoku/blob/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/blurry/blurry_0197.jpg",
+    "author": "Baptiste Wicht / Jean Hennebert; curated by François Rozet",
+    "license": "CC BY 4.0",
+    "limits": {
+      "all": {
+        "maxErrors": 5,
+        "maxExtra": 0,
+        "minCorrect": 25
+      }
+    }
+  },
+  {
+    "id": "sudoku_0004",
+    "path": "resources/images/generated/sudoku_0004.jpg",
+    "category": "generated",
+    "split": "tune",
+    "image": "sudoku_0004.jpg",
+    "url": "https://raw.githubusercontent.com/francois-rozet/sudoku/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/generated/sudoku_0004.jpg",
+    "sha256": "410ba15bb02d2b1ead4d30140261adb49b3cb40d53369136b819cfb78439a9d4",
+    "all": [
+      5, 0, 4, 0, 7, 9, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 1, 8, 0, 0, 0, 0, 2, 0, 0, 5, 0, 0, 9, 1,
+      0, 0, 0, 0, 0, 0, 1, 2, 4, 6, 0, 6, 0, 0, 0, 0, 8, 0, 5, 1, 0, 3, 0, 0, 2, 0, 0, 0, 0, 5, 9, 0, 3, 0, 0,
+      0, 0, 0, 0, 0, 8, 0, 0, 4, 0, 0
+    ],
+    "printed": [
+      5, 0, 4, 0, 7, 9, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 1, 8, 0, 0, 0, 0, 2, 0, 0, 5, 0, 0, 9, 1,
+      0, 0, 0, 0, 0, 0, 1, 2, 4, 6, 0, 6, 0, 0, 0, 0, 8, 0, 5, 1, 0, 3, 0, 0, 2, 0, 0, 0, 0, 5, 9, 0, 3, 0, 0,
+      0, 0, 0, 0, 0, 8, 0, 0, 4, 0, 0
+    ],
+    "source": "https://github.com/francois-rozet/sudoku/blob/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/generated/sudoku_0004.jpg",
+    "author": "François Rozet",
+    "license": "MIT",
+    "limits": {
+      "all": {
+        "maxErrors": 1,
+        "maxExtra": 0,
+        "minCorrect": 25
+      }
+    }
+  },
+  {
+    "id": "sudoku_0049",
+    "path": "resources/images/generated/sudoku_0049.jpg",
+    "category": "generated",
+    "split": "tune",
+    "image": "sudoku_0049.jpg",
+    "url": "https://raw.githubusercontent.com/francois-rozet/sudoku/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/generated/sudoku_0049.jpg",
+    "sha256": "d892e3b89b575d20cdc075727dbc0a362ea6533e526f03c53d13025267c010cc",
+    "all": [
+      4, 7, 3, 0, 0, 8, 0, 0, 0, 1, 0, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 2, 7, 0, 0, 0, 0, 0, 0, 0, 9, 0, 8, 4,
+      2, 0, 0, 0, 0, 0, 0, 7, 0, 1, 0, 0, 6, 0, 0, 0, 9, 0, 0, 7, 9, 0, 0, 0, 5, 0, 0, 0, 0, 6, 8, 2, 0, 0, 0,
+      0, 0, 0, 0, 0, 8, 7, 9, 0, 0, 0
+    ],
+    "printed": [
+      4, 7, 3, 0, 0, 8, 0, 0, 0, 1, 0, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 2, 7, 0, 0, 0, 0, 0, 0, 0, 9, 0, 8, 4,
+      2, 0, 0, 0, 0, 0, 0, 7, 0, 1, 0, 0, 6, 0, 0, 0, 9, 0, 0, 7, 9, 0, 0, 0, 5, 0, 0, 0, 0, 6, 8, 2, 0, 0, 0,
+      0, 0, 0, 0, 0, 8, 7, 9, 0, 0, 0
+    ],
+    "source": "https://github.com/francois-rozet/sudoku/blob/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/generated/sudoku_0049.jpg",
+    "author": "François Rozet",
+    "license": "MIT",
+    "limits": {
+      "all": {
+        "maxErrors": 0,
+        "maxExtra": 0,
+        "minCorrect": 26
+      }
+    }
+  },
+  {
+    "id": "sudoku_0069",
+    "path": "resources/images/generated/sudoku_0069.jpg",
+    "category": "generated",
+    "split": "tune",
+    "image": "sudoku_0069.jpg",
+    "url": "https://raw.githubusercontent.com/francois-rozet/sudoku/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/generated/sudoku_0069.jpg",
+    "sha256": "d0de3a614fbeb74b3274efadbfda591d13d9b23a16d9a9f1deb8d25038d5a228",
+    "all": [
+      9, 1, 0, 0, 5, 6, 0, 0, 0, 0, 0, 4, 9, 0, 7, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 0, 5, 0,
+      1, 7, 2, 0, 0, 0, 0, 4, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 2, 0, 6, 4, 0, 0, 0, 0, 9, 8, 5, 0, 0, 0,
+      0, 0, 0, 0, 0, 3, 2, 0, 0, 0, 5
+    ],
+    "printed": [
+      9, 1, 0, 0, 5, 6, 0, 0, 0, 0, 0, 4, 9, 0, 7, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 0, 5, 0,
+      1, 7, 2, 0, 0, 0, 0, 4, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 2, 0, 6, 4, 0, 0, 0, 0, 9, 8, 5, 0, 0, 0,
+      0, 0, 0, 0, 0, 3, 2, 0, 0, 0, 5
+    ],
+    "source": "https://github.com/francois-rozet/sudoku/blob/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/generated/sudoku_0069.jpg",
+    "author": "François Rozet",
+    "license": "MIT",
+    "limits": {
+      "all": {
+        "maxErrors": 1,
+        "maxExtra": 0,
+        "minCorrect": 24
+      }
+    }
+  },
+  {
+    "id": "sudoku_0073",
+    "path": "resources/images/generated/sudoku_0073.jpg",
+    "category": "generated",
+    "split": "tune",
+    "image": "sudoku_0073.jpg",
+    "url": "https://raw.githubusercontent.com/francois-rozet/sudoku/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/generated/sudoku_0073.jpg",
+    "sha256": "940d0a4b19c81fcea4bae58b343b90f1b44c4cd6206aab3a37ffc7a3d9e606fe",
+    "all": [
+      0, 8, 0, 0, 0, 2, 0, 0, 0, 7, 1, 0, 8, 4, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 2, 5,
+      0, 0, 4, 5, 0, 0, 0, 3, 6, 0, 0, 9, 6, 0, 0, 0, 0, 7, 4, 0, 5, 7, 3, 0, 1, 0, 0, 0, 3, 0, 0, 0, 2, 0, 0,
+      0, 0, 0, 0, 0, 7, 8, 0, 0, 0, 0
+    ],
+    "printed": [
+      0, 8, 0, 0, 0, 2, 0, 0, 0, 7, 1, 0, 8, 4, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 2, 5,
+      0, 0, 4, 5, 0, 0, 0, 3, 6, 0, 0, 9, 6, 0, 0, 0, 0, 7, 4, 0, 5, 7, 3, 0, 1, 0, 0, 0, 3, 0, 0, 0, 2, 0, 0,
+      0, 0, 0, 0, 0, 7, 8, 0, 0, 0, 0
+    ],
+    "source": "https://github.com/francois-rozet/sudoku/blob/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/generated/sudoku_0073.jpg",
+    "author": "François Rozet",
+    "license": "MIT",
+    "limits": {
+      "all": {
+        "maxErrors": 17,
+        "maxExtra": 0,
+        "minCorrect": 9
+      }
+    }
+  },
+  {
+    "id": "sudoku_0078",
+    "path": "resources/images/generated/sudoku_0078.jpg",
+    "category": "generated",
+    "split": "test",
+    "image": "sudoku_0078.jpg",
+    "url": "https://raw.githubusercontent.com/francois-rozet/sudoku/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/generated/sudoku_0078.jpg",
+    "sha256": "cce695ad2e667462937cdcbb0662adb280dabc3da5c08dbee550d18c54681b3c",
+    "all": [
+      3, 6, 0, 8, 0, 0, 0, 0, 0, 2, 0, 7, 0, 0, 5, 0, 0, 9, 0, 0, 0, 4, 2, 3, 0, 0, 0, 0, 0, 5, 0, 0, 0, 8, 0,
+      7, 6, 0, 0, 0, 0, 0, 0, 4, 1, 0, 0, 0, 0, 0, 0, 9, 6, 5, 1, 2, 0, 7, 3, 0, 0, 0, 0, 0, 0, 9, 0, 0, 4, 0,
+      0, 0, 0, 0, 0, 0, 1, 9, 0, 0, 0
+    ],
+    "printed": [
+      3, 6, 0, 8, 0, 0, 0, 0, 0, 2, 0, 7, 0, 0, 5, 0, 0, 9, 0, 0, 0, 4, 2, 3, 0, 0, 0, 0, 0, 5, 0, 0, 0, 8, 0,
+      7, 6, 0, 0, 0, 0, 0, 0, 4, 1, 0, 0, 0, 0, 0, 0, 9, 6, 5, 1, 2, 0, 7, 3, 0, 0, 0, 0, 0, 0, 9, 0, 0, 4, 0,
+      0, 0, 0, 0, 0, 0, 1, 9, 0, 0, 0
+    ],
+    "source": "https://github.com/francois-rozet/sudoku/blob/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/generated/sudoku_0078.jpg",
+    "author": "François Rozet",
+    "license": "MIT",
+    "limits": {
+      "all": {
+        "maxErrors": 1,
+        "maxExtra": 0,
+        "minCorrect": 26
+      }
+    }
+  },
+  {
+    "id": "sudoku_0097",
+    "path": "resources/images/generated/sudoku_0097.jpg",
+    "category": "generated",
+    "split": "test",
+    "image": "sudoku_0097.jpg",
+    "url": "https://raw.githubusercontent.com/francois-rozet/sudoku/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/generated/sudoku_0097.jpg",
+    "sha256": "04a027b30a375b8b731f2f9a2a25efd8c70607a8bdb3e7966a520ce667eaa148",
+    "all": [
+      0, 0, 2, 8, 3, 0, 0, 0, 0, 7, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5,
+      4, 0, 0, 0, 0, 0, 0, 0, 0, 1, 8, 6, 1, 0, 0, 0, 0, 9, 0, 5, 0, 0, 0, 7, 0, 6, 0, 0, 0, 0, 3, 9, 8, 0, 0,
+      0, 0, 0, 0, 0, 0, 2, 3, 0, 0, 0
+    ],
+    "printed": [
+      0, 0, 2, 8, 3, 0, 0, 0, 0, 7, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5,
+      4, 0, 0, 0, 0, 0, 0, 0, 0, 1, 8, 6, 1, 0, 0, 0, 0, 9, 0, 5, 0, 0, 0, 7, 0, 6, 0, 0, 0, 0, 3, 9, 8, 0, 0,
+      0, 0, 0, 0, 0, 0, 2, 3, 0, 0, 0
+    ],
+    "source": "https://github.com/francois-rozet/sudoku/blob/9585e73a296e8da80e886335eec31a6d4627ff26/resources/images/generated/sudoku_0097.jpg",
+    "author": "François Rozet",
+    "license": "MIT",
+    "limits": {
+      "all": {
+        "maxErrors": 0,
+        "maxExtra": 0,
+        "minCorrect": 22
+      }
+    }
+  },
+  {
+    "id": "airplane",
+    "category": "photo",
+    "split": "tune",
+    "image": "airplane.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/d/d1/SUDOKU_%288381070829%29.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:SUDOKU_%288381070829%29.jpg",
+    "author": "inazakira",
+    "license": "CC BY-SA 2.0",
+    "sha256": "0f565d82404089b4bc51b89d69d39391719f76853a91cb29c36eab3e69440a88",
+    "all": [
+      2, 1, 0, 4, 3, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 8, 5, 0, 0, 0, 4, 0, 0, 7, 0, 1, 3, 0, 0, 0, 0, 0, 2, 0, 9,
+      5, 0, 0, 0, 8, 1, 9, 0, 0, 0, 9, 6, 0, 7, 0, 0, 0, 0, 0, 8, 9, 0, 5, 0, 0, 7, 0, 0, 0, 2, 1, 0, 0, 0, 0,
+      0, 0, 0, 3, 0, 0, 7, 8, 0, 6, 9
+    ],
+    "printed": [
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    ],
+    "limits": {
+      "all": {
+        "maxErrors": 0,
+        "maxExtra": 0,
+        "minCorrect": 31
+      }
+    }
+  },
+  {
+    "id": "expert",
+    "category": "handwritten",
+    "split": "tune",
+    "image": "expert.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/1/12/Sudoku-1.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Sudoku-1.jpg",
+    "author": "Miraifusionzt4",
+    "license": "CC0 1.0",
+    "sha256": "43172c9a84ec4f64b48bd78550680ee9538791d9d2b99eafa7c9ed06c21177bc",
+    "all": [
+      0, 5, 4, 0, 0, 0, 0, 0, 0, 1, 0, 6, 0, 0, 5, 0, 2, 0, 0, 0, 0, 0, 0, 0, 4, 0, 3, 0, 0, 0, 6, 0, 0, 2, 9,
+      4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 3, 5, 0, 0, 9, 0, 0, 0, 7, 0, 3, 0, 0, 0, 0, 0, 0, 0, 8, 0, 7, 0, 0, 9,
+      0, 5, 0, 0, 0, 0, 0, 0, 3, 6, 0
+    ],
+    "printed": [
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    ],
+    "limits": {
+      "all": {
+        "maxErrors": 11,
+        "maxExtra": 0,
+        "minCorrect": 13
+      },
+      "printed": {
+        "maxErrors": 0,
+        "maxExtra": 0,
+        "minCorrect": 0
+      }
+    }
+  },
+  {
+    "id": "17-clues",
+    "category": "generated",
+    "split": "test",
+    "image": "17-clues.png",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/b/b1/Sudoku_Puzzle_%2817_clue_-_R929-3E01%29.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Sudoku_Puzzle_%2817_clue_-_R929-3E01%29.png",
+    "author": "LithiumFlash",
+    "license": "CC BY-SA 4.0",
+    "sha256": "dde0e17c2ead7cf9ee8ce5a913473739eb81add97cf14d674e30862e3e522b7e",
+    "all": [
+      0, 0, 0, 0, 4, 0, 0, 0, 0, 1, 2, 0, 0, 0, 0, 0, 7, 3, 0, 3, 0, 0, 0, 8, 0, 0, 0, 0, 0, 4, 0, 0, 0, 6, 0,
+      0, 0, 0, 0, 2, 0, 3, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 9, 0, 5, 0, 0, 0, 7, 0, 0, 0, 0, 0,
+      2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    ],
+    "printed": [
+      0, 0, 0, 0, 4, 0, 0, 0, 0, 1, 2, 0, 0, 0, 0, 0, 7, 3, 0, 3, 0, 0, 0, 8, 0, 0, 0, 0, 0, 4, 0, 0, 0, 6, 0,
+      0, 0, 0, 0, 2, 0, 3, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 9, 0, 5, 0, 0, 0, 7, 0, 0, 0, 0, 0,
+      2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    ],
+    "limits": {
+      "all": {
+        "maxErrors": 0,
+        "maxExtra": 0,
+        "minCorrect": 17
+      }
+    }
+  }
+]

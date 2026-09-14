@@ -118,10 +118,33 @@ function lines(cv, binary, vertical) {
 function detect(cv, src) {
   const boards = detectComposition(cv, src)
   if (boards) return { corners: boards[0].corners, detected: true, suggestedSize: 9, boards }
+  let result
+  // Soft, low-contrast separators can disappear at the normal threshold. Retry
+  // grid detection with a wider local neighbourhood before using manual corners.
+  for (const [offset, block] of [
+    [12, 31],
+    [5, 51],
+    [2, 51],
+  ]) {
+    const candidate = detectClassic(cv, src, offset, block)
+    if (candidate.detected && candidate.suggestedSize) return candidate
+    if (!result || candidate.detected) result = candidate
+  }
+  return result
+}
 
-  const binary = threshold(cv, src),
+function detectClassic(cv, src, offset, block) {
+  const binary = threshold(cv, src, offset, block),
     contours = new cv.MatVector(),
     hierarchy = new cv.Mat()
+  if (offset < 12) {
+    const repair = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(3, 3))
+    try {
+      cv.morphologyEx(binary, binary, cv.MORPH_CLOSE, repair)
+    } finally {
+      repair.delete()
+    }
+  }
   let corners = [
     { x: src.cols * 0.03, y: src.rows * 0.03 },
     { x: src.cols * 0.97, y: src.rows * 0.03 },
@@ -150,7 +173,7 @@ function detect(cv, src) {
       }
     }
     const rectified = warp(cv, src, corners, 768)
-    const grid = threshold(cv, rectified)
+    const grid = threshold(cv, rectified, offset, block)
     try {
       const count = Math.max(lines(cv, grid, true).length, lines(cv, grid, false).length)
       return { corners, detected: area > 0, suggestedSize: count >= 14 ? 16 : count >= 8 ? 9 : null }
@@ -182,7 +205,8 @@ function boundaries(peaks, size, side) {
   })
 }
 
-function prepare(cv, src, corners, size) {
+function prepare(cv, src, corners, size, mode = 'all') {
+  const printedOnly = mode === 'printed'
   const side = size === 16 ? 1536 : 1080
   const sourcePitch =
     (Math.hypot(corners[1].x - corners[0].x, corners[1].y - corners[0].y) +
@@ -228,7 +252,15 @@ function prepare(cv, src, corners, size) {
               g = cleaned.data[p + 1] / paper[1],
               b = cleaned.data[p + 2] / paper[2]
             const blue = b - r > 0.055 && Math.max(r, g, b) > 0.25
-            const gray = blue ? 255 : Math.min(255, Math.round(((r + g + b) / 3) * 255))
+            const red = r > 0.4 && r - Math.max(g, b) > 0.18
+            const coloured = blue || red
+            // Coloured printed digits are valid input in the default mode. The
+            // darkest normalized channel retains their contrast against the paper.
+            const gray = printedOnly
+              ? coloured
+                ? 255
+                : Math.min(255, Math.round(((r + g + b) / 3) * 255))
+              : Math.min(255, Math.round(Math.min(r, g, b) * 255))
             if (gray < 190) {
               inkHistogram[gray]++
               inkSamples++
@@ -249,10 +281,11 @@ function prepare(cv, src, corners, size) {
     }
     const inkToneLimit = Math.min(0.72, inkReference + 0.19)
     if (smallPrint) cv.GaussianBlur(cleaned, cleaned, new cv.Size(3, 3), 0)
-    binary = threshold(cv, cleaned, smallPrint ? 5 : 12, smallPrint ? 51 : 31)
+    const softPrint = smallPrint || (!printedOnly && sourcePitch < 60)
+    binary = threshold(cv, cleaned, softPrint ? 5 : 12, softPrint ? 51 : 31)
     const inkKernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, new cv.Size(3, 3))
     try {
-      cv.morphologyEx(binary, binary, cv.MORPH_OPEN, inkKernel)
+      if (printedOnly) cv.morphologyEx(binary, binary, cv.MORPH_OPEN, inkKernel)
     } finally {
       inkKernel.delete()
     }
@@ -281,6 +314,23 @@ function prepare(cv, src, corners, size) {
         const glyph = cv.Mat.zeros(h, w, cv.CV_8UC1)
         let resized, padded
         try {
+          if (!printedOnly) {
+            cv.distanceTransform(roi, distance, cv.DIST_L2, 3)
+            let stroke = 0
+            for (let py = Math.round(h * 0.2); py < h * 0.8; py++)
+              for (let px = Math.round(w * 0.2); px < w * 0.8; px++)
+                stroke = Math.max(stroke, distance.data32F[py * w + px])
+            // Remove speckle around substantial strokes, but preserve fine fonts
+            // and pencil strokes which a blanket opening would erase entirely.
+            if (stroke >= 3) {
+              const kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, new cv.Size(3, 3))
+              try {
+                cv.morphologyEx(roi, roi, cv.MORPH_OPEN, kernel)
+              } finally {
+                kernel.delete()
+              }
+            }
+          }
           const count = cv.connectedComponentsWithStats(roi, labels, stats, centers, 8, cv.CV_32S)
           cv.distanceTransform(roi, distance, cv.DIST_L2, 3)
           const thickness = new Float32Array(count)
@@ -304,11 +354,17 @@ function prepare(cv, src, corners, size) {
               ch = stats.intAt(n, cv.CC_STAT_HEIGHT)
             const area = stats.intAt(n, cv.CC_STAT_AREA)
             allInk += area
-            if (ch < h * 0.3 || area < w * h * 0.015 || cw > w * 0.95 || ch > h * 0.97) continue
+            if (
+              ch < h * (printedOnly ? 0.3 : 0.23) ||
+              area < w * h * (printedOnly ? 0.015 : 0.008) ||
+              cw > w * 0.95 ||
+              ch > h * 0.97
+            )
+              continue
             // Printed magazine digits are heavier than thin pencil/pen candidates.
             // Ambiguous components are left for review instead of being trusted.
-            if (thickness[n] < Math.max(1.8, ch * 0.045)) continue
-            if (tones[n] / area > inkToneLimit) continue
+            if (printedOnly && thickness[n] < Math.max(1.8, ch * 0.045)) continue
+            if (printedOnly && tones[n] / area > inkToneLimit) continue
             if (left + cw / 2 < w * 0.04 || left + cw / 2 > w * 0.96) continue
             keep.add(n)
             ink += area
@@ -381,11 +437,13 @@ function prepare(cv, src, corners, size) {
               index,
               rect: { x, y, w, h },
               empty: false,
+              relativeHeight: (maxY - minY) / h,
+              meanTone: [...keep].reduce((sum, label) => sum + tones[label], 0) / ink,
               digitHint,
               width: padded.cols,
               height: padded.rows,
               data: new Uint8Array(padded.data),
-              ambiguous: keep.size > 2 || ink / (w * h) > 0.42,
+              ambiguous: keep.size > 2 || ink / (w * h) > 0.42 || (!printedOnly && (maxY - minY) / h < 0.35),
             })
           } finally {
             cropped.delete()
@@ -401,6 +459,44 @@ function prepare(cv, src, corners, size) {
           padded?.delete()
         }
       }
+    if (!printedOnly) {
+      // Compare candidate ink with other glyphs on this same board. This rejects
+      // faint paper texture without a fixed darkness cutoff that loses low-
+      // contrast printed digits. Grid lines are excluded from this estimate.
+      const tones = cells
+        .filter((c) => !c.empty)
+        .map((c) => c.meanTone)
+        .sort((a, b) => a - b)
+      if (tones.length >= 10) {
+        const limit = Math.min(0.94, Math.max(0.72, tones[Math.floor(tones.length * 0.25)] + 0.12))
+        for (let i = 0; i < cells.length; i++) {
+          const cell = cells[i]
+          if (!cell.empty && cell.meanTone > limit)
+            cells[i] = { index: cell.index, rect: cell.rect, empty: true, ambiguous: true }
+        }
+      }
+    }
+    if (printedOnly) {
+      // On a partly filled page, printed digits share a stable font size while
+      // handwritten additions are often smaller. Estimate that size per board,
+      // using the upper quartile so numerous small notes cannot dominate it.
+      const heights = cells
+        .filter((c) => !c.empty)
+        .map((c) => c.relativeHeight)
+        .sort((a, b) => a - b)
+      if (heights.length >= size * size * 0.65) {
+        const minimum = heights[Math.floor(heights.length * 0.75)] * 0.88
+        for (let i = 0; i < cells.length; i++) {
+          const cell = cells[i]
+          if (!cell.empty && cell.relativeHeight < minimum)
+            cells[i] = { index: cell.index, rect: cell.rect, empty: true, ambiguous: true }
+        }
+      }
+    }
+    for (const cell of cells) {
+      delete cell.relativeHeight
+      delete cell.meanTone
+    }
     return { width: side, height: side, data: new Uint8ClampedArray(rectified.data), cells }
   } finally {
     rectified.delete()
@@ -415,7 +511,9 @@ self.onmessage = async ({ data: message }) => {
     const cv = await getCV()
     src = cv.matFromImageData(message.image)
     const result =
-      message.type === 'detect' ? detect(cv, src) : prepare(cv, src, message.corners, message.size)
+      message.type === 'detect'
+        ? detect(cv, src)
+        : prepare(cv, src, message.corners, message.size, message.mode)
     const transfer = []
     if (result.data) transfer.push(result.data.buffer)
     if (result.cells) for (const cell of result.cells) if (cell.data) transfer.push(cell.data.buffer)

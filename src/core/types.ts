@@ -1,4 +1,5 @@
 export type BoardSize = 9 | 16
+export type RecognitionMode = 'all' | 'printed'
 export interface GridPlacement {
   x: number
   y: number

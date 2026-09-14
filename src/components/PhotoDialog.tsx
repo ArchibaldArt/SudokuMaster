@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { PointerEvent } from 'react'
 import { Check, LoaderCircle, RotateCw, ScanLine, X } from 'lucide-react'
-import type { BoardSize, Corners, RecognitionResult } from '../core/types'
+import type { BoardSize, Corners, RecognitionMode, RecognitionResult } from '../core/types'
 import { CompositionCrop } from './CompositionCrop'
 import { layouts } from '../core/topology'
 import type { LayoutName } from '../core/topology'
@@ -30,6 +30,7 @@ export function PhotoDialog({
   const [addX, setAddX] = useState(6)
   const [addY, setAddY] = useState(6)
   const [size, setSize] = useState(initialSize)
+  const [mode, setMode] = useState<RecognitionMode>('all')
   const [phase, setPhase] = useState<'detecting' | 'crop' | 'recognizing'>('detecting')
   const [detected, setDetected] = useState(false)
   const [error, setError] = useState('')
@@ -77,6 +78,7 @@ export function PhotoDialog({
     const service = new PhotoProcessor()
     processor.current = service
     let cancelled = false
+    setMode('all')
     void (async () => {
       try {
         const photo = await readPhoto(file)
@@ -144,6 +146,7 @@ export function PhotoDialog({
           if (alive.current) setProgress(p)
         },
         boards ?? undefined,
+        mode,
       )
       if (alive.current) onRecognized(result)
     } catch (e) {
@@ -203,7 +206,9 @@ export function PhotoDialog({
           if (event.key === 'Escape') onClose()
           if (event.key === 'Tab') {
             const targets = Array.from(
-              dialog.current!.querySelectorAll<HTMLElement>('button:not(:disabled), select, [tabindex="0"]'),
+              dialog.current!.querySelectorAll<HTMLElement>(
+                'button:not(:disabled), select:not(:disabled), input:not(:disabled), [tabindex="0"], summary',
+              ),
             )
             const first = targets[0],
               last = targets.at(-1)
@@ -236,11 +241,41 @@ export function PhotoDialog({
         <div className="photo-dialog-body">
           <p className="dialog-description">
             {phase === 'recognizing'
-              ? 'Выделяем печатные числа. После распознавания вы сможете проверить и исправить каждую клетку.'
+              ? 'После распознавания вы сможете проверить и исправить каждую клетку.'
               : boards
                 ? `Найдено ${boards.length} полей. Проверьте рамки и общие блоки.`
                 : 'Перетащите четыре точки к внешним углам сетки. Числа должны читаться сверху вниз.'}
           </p>
+          {!busy && source && (
+            <fieldset className="recognition-modes" aria-describedby="recognition-mode-help">
+              <legend>Что распознавать</legend>
+              <label>
+                <input
+                  type="radio"
+                  name="recognition-mode"
+                  value="all"
+                  checked={mode === 'all'}
+                  onChange={() => setMode('all')}
+                />
+                <strong>Все числа</strong>
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="recognition-mode"
+                  value="printed"
+                  checked={mode === 'printed'}
+                  onChange={() => setMode('printed')}
+                />
+                <strong>Только печатные</strong>
+              </label>
+              <p id="recognition-mode-help">
+                {mode === 'all'
+                  ? 'Для незаполненной задачи. Сохраняем числа любого цвета.'
+                  : 'Для задачи с пометками. Убираем цветные записи и мелкие штрихи. Результат нужно проверить.'}
+              </p>
+            </fieldset>
+          )}
           <div className="crop-stage">
             {source && boards && corners ? (
               <CompositionCrop

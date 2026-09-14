@@ -24,7 +24,7 @@ export default defineConfig({
     {
       name: 'webkit',
       use: { ...devices['iPhone 13'] },
-      testMatch: /(?:mobile|photo|camera|design|composite)\.spec\.ts/,
+      testMatch: /(?:mobile|photo|camera|design|composite|recognition-modes|web-photos)\.spec\.ts/,
     },
   ],
   webServer: {
