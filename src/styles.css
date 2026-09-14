@@ -558,9 +558,29 @@ svg {
   color: var(--muted);
   line-height: 1.5;
 }
-.solve-panel.danger .solve-status h2,
-.solve-panel.danger .solve-status p {
-  color: #a72033;
+.solve-panel.success {
+  --status-color: #166534;
+  --status-background: #edf9f0;
+  --status-border: #25934e;
+}
+.solve-panel.danger {
+  --status-color: #a72033;
+  --status-background: #fff1f2;
+  --status-border: #d23b50;
+}
+.solve-panel.warning {
+  --status-color: #785308;
+  --status-background: #fff8d9;
+  --status-border: #d9a415;
+}
+.solve-panel:is(.success, .danger, .warning) .solve-status {
+  padding: 12px;
+  border-left: 4px solid var(--status-border);
+  border-radius: 8px;
+  background: var(--status-background);
+}
+.solve-panel:is(.success, .danger, .warning) .solve-status :is(h2, p, svg) {
+  color: var(--status-color);
 }
 .solve-panel.warning .review-count {
   color: #8b600d;
@@ -751,18 +771,6 @@ svg {
 }
 .is-zoomed .grid-viewport {
   --board-base-width: min(100%, 900px, calc(100dvh - 160px));
-}
-.check-action {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  column-gap: 12px;
-  margin-top: 8px;
-}
-.check-action > span {
-  color: var(--muted);
-  font-size: 16px;
 }
 .check-mode .solve-status > p {
   display: block;

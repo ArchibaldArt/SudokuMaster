@@ -62,7 +62,7 @@ for (const composite of [false, true]) {
     await recognize.click()
     await expect(page.getByRole('dialog')).toHaveCount(0, { timeout: 90000 })
     const check = page.getByRole('button', { name: 'Проверить судоку', exact: true })
-    await expect(check).toBeDisabled()
+    await expect(check).toHaveCount(0)
     if (composite) await page.getByLabel('Выбрать поле', { exact: true }).selectOption('all')
     await compareViews(page)
     const original = (await page.locator('.sudoku-grid').boundingBox())!

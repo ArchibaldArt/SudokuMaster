@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { version } from '../package.json'
 import {
+  AlertTriangle,
   Camera,
   Check,
   CheckCircle2,
@@ -25,6 +26,7 @@ import {
   Square,
   Upload,
   X,
+  XCircle,
 } from 'lucide-react'
 import { CompositeBoard } from './components/CompositeBoard'
 import { cellLabel, emptyLayout, layouts, puzzleTitle } from './core/topology'
@@ -74,13 +76,15 @@ export default function App() {
   const active = ['running', 'checking', 'paused', 'timeout'].includes(solver.phase)
   const values = solver.values ?? puzzle.givens
   const filled = values.filter(Boolean).length
-  const ready = hasTask && puzzle.givens.some(Boolean) && validation.valid && (!review || confirmed)
-  const canCheck = hasTask && puzzle.givens.some(Boolean) && (!review || confirmed)
+  const hasNumbers = puzzle.givens.some(Boolean)
+  const checkPassed = !checkOnly || solver.result?.status === 'unique' || solver.result?.status === 'multiple'
+  const ready = hasTask && hasNumbers && validation.valid && confirmed && !active && checkPassed
+  const needsConfirmation = hasTask && (!confirmed || (checkOnly && solver.phase === 'error'))
   const needsChecking = !!review && !confirmed
   const solved = solver.hasSolution
   useEffect(() => {
-    if (confirmed) solveButton.current?.focus({ preventScroll: true })
-  }, [confirmed])
+    if (ready && !locked) solveButton.current?.focus({ preventScroll: true })
+  }, [ready, locked])
   useEffect(() => {
     if (overlay === 'editor') editorBody.current?.scrollTo(0, 0)
   }, [selected, overlay])
@@ -149,7 +153,7 @@ export default function App() {
     setPuzzle(getExample(size))
     setName(size === 9 ? 'Классический пример' : 'Задача из журнала')
     setReview(null)
-    setConfirmed(false)
+    setConfirmed(true)
     setUncertain(new Set())
     setSelected(0)
     setError('')
@@ -187,12 +191,23 @@ export default function App() {
       next.delete(index)
       return next
     })
-    if (review) setConfirmed(false)
+    setConfirmed(false)
     setError('')
+  }
+  const confirmNumbers = () => {
+    setConfirmed(true)
+    setUncertain(new Set())
+    setInspecting(false)
+    solver.start('check')
+  }
+  const stop = () => {
+    if (checkOnly) setConfirmed(false)
+    solver.reset()
   }
   const acceptFile = (next: File | undefined) => {
     if (!next) return
     solver.reset()
+    setConfirmed(false)
     setFile(next)
     setError('')
   }
@@ -268,10 +283,9 @@ export default function App() {
     statusTitle = 'Сначала проверим числа'
     statusText = 'Сверьте поле с фото и исправьте ошибки.'
     tone = 'warning'
-  } else if (review && confirmed && solver.phase === 'idle') {
-    statusTitle = 'Числа проверены'
-    statusText = 'Можно запускать решение.'
-    tone = 'success'
+  } else if (needsConfirmation) {
+    statusTitle = 'Введите исходные числа'
+    statusText = 'Когда закончите, нажмите «Я заполнил числа» — проверим судоку автоматически.'
   }
   if (!validation.valid) {
     statusTitle = 'В исходных числах есть конфликт'
@@ -328,20 +342,32 @@ export default function App() {
     } else if (solver.phase === 'timeout') {
       statusTitle = 'Проверка не завершена'
       statusText = 'Результат пока не установлен. Продолжите проверку ещё на 30 секунд.'
+    } else if (solver.phase === 'error') {
+      statusTitle = 'Не удалось проверить судоку'
+      statusText = 'Подтвердите числа ещё раз, чтобы повторить проверку.'
     } else if (solver.phase === 'finished') {
       const unique = solver.result?.status === 'unique'
       const multiple = solver.result?.status === 'multiple'
-      statusTitle = unique ? 'Корректное судоку' : 'Некорректное судоку'
+      const invalid = solver.result?.status === 'invalid'
+      statusTitle = unique
+        ? 'Корректное судоку'
+        : multiple
+          ? 'Есть несколько решений'
+          : invalid
+            ? 'В исходных числах есть конфликт'
+            : 'У этой задачи нет решения'
       statusText = unique
         ? 'У задачи ровно одно решение.'
         : multiple
           ? 'У задачи несколько решений.'
-          : 'У задачи нет решения.'
+          : invalid
+            ? 'Исправьте числа, отмеченные красным, и подтвердите ввод ещё раз.'
+            : 'Проверьте исходные числа и подтвердите ввод ещё раз.'
       tone = unique ? 'success' : multiple ? 'warning' : 'danger'
     }
   }
 
-  const phaseNumber = !hasTask ? '01' : needsChecking ? '02' : '03'
+  const phaseNumber = !hasTask ? '01' : needsConfirmation ? '02' : '03'
   return (
     <div className={`app ${keyboardOpen ? 'keyboard-open' : ''}`}>
       <header className="site-header">
@@ -549,8 +575,10 @@ export default function App() {
               <span>{phaseNumber}</span>
               {!hasTask
                 ? 'Фотография'
-                : needsChecking
-                  ? 'Проверка чисел'
+                : needsConfirmation
+                  ? review
+                    ? 'Проверка чисел'
+                    : 'Ввод чисел'
                   : checkOnly
                     ? 'Проверка судоку'
                     : 'Решение'}
@@ -559,6 +587,10 @@ export default function App() {
               <div className="status-title">
                 {tone === 'success' ? (
                   <CheckCircle2 size={22} />
+                ) : tone === 'danger' ? (
+                  <XCircle size={22} />
+                ) : tone === 'warning' && !active ? (
+                  <AlertTriangle size={22} />
                 ) : active ? (
                   <LoaderCircle
                     size={21}
@@ -577,7 +609,7 @@ export default function App() {
                 Следующая сомнительная клетка
               </button>
             )}
-            <div className={`solve-controls ${needsChecking ? 'needs-confirmation' : ''}`}>
+            <div className={`solve-controls ${needsConfirmation ? 'needs-confirmation' : ''}`}>
               {!hasTask ? (
                 <>
                   <button className="button primary" onClick={() => openOverlay('camera')}>
@@ -591,25 +623,21 @@ export default function App() {
                 </>
               ) : (
                 <>
-                  {needsChecking && (
+                  {needsConfirmation && (
                     <button
                       className="button primary confirm-button"
-                      disabled={locked || !validation.valid}
+                      disabled={locked || !hasNumbers}
                       aria-describedby="solve-status-text"
-                      onClick={() => {
-                        setConfirmed(true)
-                        setUncertain(new Set())
-                        setInspecting(false)
-                      }}
+                      onClick={confirmNumbers}
                     >
                       <CheckCircle2 size={21} />
-                      <span>Я проверил(а) числа по фотографии</span>
+                      <span>{review ? 'Я проверил(а) числа по фотографии' : 'Я заполнил числа'}</span>
                     </button>
                   )}
-                  {(!locked || solver.phase === 'finished') && !solved && (
+                  {(!locked || checkOnly || solver.phase === 'finished') && !solved && (
                     <button
                       ref={solveButton}
-                      className={`button ${needsChecking ? 'secondary' : 'primary'} solve-button`}
+                      className={`button ${needsConfirmation ? 'secondary' : 'primary'} solve-button`}
                       disabled={!ready}
                       aria-describedby="solve-status-text"
                       onClick={() => {
@@ -622,7 +650,7 @@ export default function App() {
                       {solver.phase === 'finished' && !checkOnly ? 'Запустить ещё раз' : 'Решить судоку'}
                     </button>
                   )}
-                  {['running', 'checking'].includes(solver.phase) && (
+                  {!checkOnly && ['running', 'checking'].includes(solver.phase) && (
                     <button className="button primary" onClick={solver.pause}>
                       <Pause size={20} />
                       Пауза
@@ -651,7 +679,7 @@ export default function App() {
                     </button>
                   )}
                   {active && (
-                    <button className="button secondary stop-button" onClick={solver.reset}>
+                    <button className="button secondary stop-button" onClick={stop}>
                       <Square size={17} />
                       Остановить
                     </button>
@@ -659,23 +687,6 @@ export default function App() {
                 </>
               )}
             </div>
-            {hasTask && !active && !solved && (
-              <div className="check-action">
-                <button
-                  className="text-button"
-                  disabled={!canCheck}
-                  aria-describedby="check-action-help"
-                  onClick={() => {
-                    setInspecting(false)
-                    solver.start('check')
-                  }}
-                >
-                  <ShieldCheck size={18} />
-                  Проверить судоку
-                </button>
-                <span id="check-action-help">Без показа решения</span>
-              </div>
-            )}
             {hasTask && (
               <div className="workflow-secondary">
                 {!active && locked ? (
@@ -899,10 +910,12 @@ export default function App() {
               <li>Проверьте найденные поля и их пересечения, затем распознайте числа.</li>
               <li>Сверьте числа с оригиналом, подтвердите проверку и запустите решение.</li>
             </ol>
-            <h3>Проверка без решения</h3>
+            <h3>Автоматическая проверка</h3>
             <p>
-              «Проверить судоку» показывает только статус: одно решение, несколько решений или ни одного.
+              После «Я проверил(а) числа по фотографии» или «Я заполнил числа» автоматически проверяем судоку.
+              Зелёный статус — одно решение, красный — конфликт или нет решения, жёлтый — несколько решений.
               Исходные клетки остаются незаполненными. Чтобы увидеть ответ, отдельно нажмите «Решить судоку».
+              Изменение любого числа требует повторного подтверждения.
             </p>
             <h3>Что можно решать</h3>
             <p>
