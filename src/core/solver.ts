@@ -1,3 +1,4 @@
+import { topology } from './topology'
 import type { PuzzleDefinition, SolveResult, SolverEvent, SolverStats } from './types'
 
 export function unitsFor(size: number, boxSize: number): number[][] {
@@ -17,15 +18,19 @@ export function unitsFor(size: number, boxSize: number): number[][] {
 }
 
 export function validatePuzzle(puzzle: PuzzleDefinition): { valid: boolean; conflicts: number[] } {
-  const { size, boxSize, givens } = puzzle
-  if ((size !== 9 && size !== 16) || boxSize * boxSize !== size || givens.length !== size * size) {
+  const { size, givens } = puzzle
+  let geometry
+  try {
+    geometry = topology(puzzle)
+  } catch {
     return { valid: false, conflicts: [] }
   }
+  if (givens.length !== geometry.cells.length) return { valid: false, conflicts: [] }
   const conflicts = new Set<number>()
   givens.forEach((value, i) => {
     if (!Number.isInteger(value) || value < 0 || value > size) conflicts.add(i)
   })
-  for (const unit of unitsFor(size, boxSize)) {
+  for (const unit of geometry.units) {
     const seen = new Map<number, number>()
     for (const index of unit) {
       const value = givens[index]
@@ -54,26 +59,20 @@ export function* solvePuzzle(
 ): Generator<SolverEvent, SolveResult> {
   const validation = validatePuzzle(puzzle)
   if (!validation.valid) return { status: 'invalid', conflicts: validation.conflicts }
-  const { size, boxSize } = puzzle
+  const { size } = puzzle
   const board = [...puzzle.givens]
-  const units = unitsFor(size, boxSize)
-  const rowMasks = new Int32Array(size)
-  const colMasks = new Int32Array(size)
-  const boxMasks = new Int32Array(size)
+  const { units, cellUnits } = topology(puzzle)
+  const unitMasks = new Int32Array(units.length)
   const all = (1 << size) - 1
   const trail: number[] = []
   const solutions: number[][] = []
-  const row = (i: number) => Math.floor(i / size)
-  const col = (i: number) => i % size
-  const box = (i: number) => Math.floor(row(i) / boxSize) * boxSize + Math.floor(col(i) / boxSize)
   for (let i = 0; i < board.length; i++)
-    if (board[i]) {
-      const bit = 1 << (board[i] - 1)
-      rowMasks[row(i)] |= bit
-      colMasks[col(i)] |= bit
-      boxMasks[box(i)] |= bit
-    }
-  const candidates = (i: number) => all & ~(rowMasks[row(i)] | colMasks[col(i)] | boxMasks[box(i)])
+    if (board[i]) for (const u of cellUnits[i]) unitMasks[u] |= 1 << (board[i] - 1)
+  const candidates = (i: number) => {
+    let occupied = 0
+    for (const u of cellUnits[i]) occupied |= unitMasks[u]
+    return all & ~occupied
+  }
   function place(
     index: number,
     value: number,
@@ -83,9 +82,7 @@ export function* solvePuzzle(
   ): SolverEvent {
     board[index] = value
     const bit = 1 << (value - 1)
-    rowMasks[row(index)] |= bit
-    colMasks[col(index)] |= bit
-    boxMasks[box(index)] |= bit
+    for (const u of cellUnits[index]) unitMasks[u] |= bit
     trail.push(index)
     if (kind === 'guess') stats.guesses++
     else stats.deductions++
@@ -95,9 +92,7 @@ export function* solvePuzzle(
     while (trail.length > checkpoint) {
       const index = trail.pop()!
       const bit = 1 << (board[index] - 1)
-      rowMasks[row(index)] &= ~bit
-      colMasks[col(index)] &= ~bit
-      boxMasks[box(index)] &= ~bit
+      for (const u of cellUnits[index]) unitMasks[u] &= ~bit
       board[index] = 0
       yield {
         type: 'change',
@@ -126,7 +121,10 @@ export function* solvePuzzle(
             return
           }
           if (count === 1 && forced < 0) forced = i
-          if (count < fewest) {
+          if (
+            count < fewest ||
+            (count === fewest && chosen >= 0 && cellUnits[i].length > cellUnits[chosen].length)
+          ) {
             chosen = i
             fewest = count
           }
@@ -147,6 +145,8 @@ export function* solvePuzzle(
         )
         continue
       }
+      let branchPositions: number[] | null = null,
+        branchValue = 0
       let hiddenIndex = -1,
         hiddenValue = 0
       for (const unit of units) {
@@ -156,17 +156,24 @@ export function* solvePuzzle(
         while (missing) {
           const bit = missing & -missing
           missing &= ~bit
+          const positions: number[] = []
           let where = -1,
             count = 0
           for (const i of unit)
             if (!board[i] && masks[i] & bit) {
               where = i
+              positions.push(i)
               count++
             }
           if (!count) {
             stats.backtracks++
             yield* undo(checkpoint, depth)
             return
+          }
+          if (count > 1 && count < fewest) {
+            fewest = count
+            branchPositions = positions
+            branchValue = bitValue(bit)
           }
           if (count === 1 && hiddenIndex < 0) {
             hiddenIndex = where
@@ -184,12 +191,17 @@ export function* solvePuzzle(
         )
         continue
       }
-      let options = masks[chosen]
-      while (options) {
-        const bit = options & -options
-        options &= ~bit
+      const branches: { index: number; value: number }[] = []
+      if (branchPositions) for (const index of branchPositions) branches.push({ index, value: branchValue })
+      else
+        for (let options = masks[chosen]; options;) {
+          const bit = options & -options
+          options &= ~bit
+          branches.push({ index: chosen, value: bitValue(bit) })
+        }
+      for (const { index, value } of branches) {
         const branch = trail.length
-        yield place(chosen, bitValue(bit), 'guess', depth + 1, 'Проверяем один из возможных кандидатов')
+        yield place(index, value, 'guess', depth + 1, 'Проверяем один из возможных кандидатов')
         yield* search(depth + 1)
         if (solutions.length >= 2) return
         yield* undo(branch, depth)

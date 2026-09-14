@@ -1,8 +1,14 @@
 export type BoardSize = 9 | 16
+export interface GridPlacement {
+  x: number
+  y: number
+}
 export interface PuzzleDefinition {
   size: BoardSize
   boxSize: 3 | 4
   givens: number[]
+  /** Origins on a shared cell lattice. Omitted for a single classic board. */
+  boards?: GridPlacement[]
 }
 export type PlacementKind = 'deduction' | 'guess' | 'retract'
 export interface SolverStats {
@@ -31,6 +37,8 @@ export interface CellRecognition {
   needsReview: boolean
   raw: string
   rect: { x: number; y: number; w: number; h: number }
+  /** Rectified crop, for composite photos whose cells have different transforms. */
+  previewUrl?: string
 }
 export interface RecognitionResult {
   puzzle: PuzzleDefinition

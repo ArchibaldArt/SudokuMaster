@@ -23,6 +23,10 @@ import {
   Upload,
   X,
 } from 'lucide-react'
+import { CompositeBoard } from './components/CompositeBoard'
+import { cellLabel, emptyLayout, layouts, puzzleTitle } from './core/topology'
+import type { LayoutName } from './core/topology'
+import { compositeExample } from './data/composite'
 import { Board } from './components/Board'
 import { PhotoDialog } from './components/PhotoDialog'
 import { CameraDialog } from './components/CameraDialog'
@@ -69,9 +73,18 @@ export default function App() {
   useEffect(() => {
     if (confirmed) solveButton.current?.focus({ preventScroll: true })
   }, [confirmed])
+  const PuzzleBoard = puzzle.boards ? CompositeBoard : Board
+  const selectedCellLabel = selected === null ? '' : cellLabel(puzzle, selected)
+  const selectedPreview = selected === null ? undefined : review?.cells[selected]?.previewUrl
   const selectedRect = selected !== null ? review?.cells[selected]?.rect : undefined
-  const cropStyle =
-    review && selectedRect
+  const cropStyle = selectedPreview
+    ? {
+        backgroundImage: `url(${selectedPreview})`,
+        backgroundSize: 'contain',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }
+    : review && selectedRect
       ? {
           backgroundImage: `url(${review.imageUrl})`,
           backgroundSize: `${(review.imageSize.width / selectedRect.w) * 100}% ${(review.imageSize.height / selectedRect.h) * 100}%`,
@@ -131,12 +144,17 @@ export default function App() {
     setError('')
     setView('grid')
   }
-  const clear = (size = puzzle.size) => {
+  const loadComposite = (layout: LayoutName) => {
+    loadExample(9)
+    setPuzzle(compositeExample(layout))
+    setName(layouts[layout].name)
+  }
+  const clear = (size = puzzle.size, preserveLayout = true) => {
     closeMenu()
     setHasTask(true)
     setInspecting(false)
     solver.reset()
-    setPuzzle(emptyPuzzle(size))
+    setPuzzle(preserveLayout && puzzle.boards ? emptyLayout(puzzle.boards) : emptyPuzzle(size))
     setName('Ваша задача')
     setReview(null)
     setConfirmed(false)
@@ -177,6 +195,16 @@ export default function App() {
     setSelected(result.cells.find((cell) => cell.needsReview)?.index ?? 0)
     setView('grid')
   }
+  const nextUncertain = () => {
+    const remaining = [...uncertain].sort((a, b) => a - b)
+    const next = remaining.find((i) => i > (selected ?? -1)) ?? remaining[0]
+    if (next !== undefined) {
+      setSelected(next)
+      setInspecting(true)
+      setView('grid')
+      setOverlay('editor')
+    }
+  }
   const download = async () => {
     setExporting(true)
     setError('')
@@ -189,7 +217,9 @@ export default function App() {
             : 'Единственность не установлена'
       downloadBlob(
         await solutionImage(puzzle, values, status),
-        `SudokuMaster-${puzzle.size}x${puzzle.size}.png`,
+        puzzle.boards
+          ? `SudokuMaster-${puzzle.boards.length}-fields.png`
+          : `SudokuMaster-${puzzle.size}x${puzzle.size}.png`,
       )
     } catch {
       setError('Не удалось сохранить изображение. Попробуйте скачать его ещё раз.')
@@ -327,6 +357,11 @@ export default function App() {
               <button onClick={() => loadExample(16)}>
                 16 × 16 <span>Из журнала</span>
               </button>
+              {(Object.keys(layouts) as LayoutName[]).map((layout) => (
+                <button key={layout} onClick={() => loadComposite(layout)}>
+                  {layouts[layout].name}
+                </button>
+              ))}
               <hr />
               <button onClick={() => openOverlay('settings')}>
                 <Settings2 size={18} />
@@ -349,7 +384,7 @@ export default function App() {
       />
       <main className={`workspace ${zoom ? 'is-zoomed' : ''}`} aria-label="Рабочий стол судоку">
         <section
-          className={`board-panel ${zoom ? 'zoomed-board' : ''} ${dragging ? 'dragging' : ''}`}
+          className={`board-panel ${puzzle.boards ? 'has-composition' : ''} ${zoom ? 'zoomed-board' : ''} ${dragging ? 'dragging' : ''}`}
           aria-label="Задача"
           onDragOver={(event) => {
             event.preventDefault()
@@ -367,9 +402,7 @@ export default function App() {
         >
           <div className="board-heading">
             <div className="board-title">
-              <h2>
-                {puzzle.size} × {puzzle.size}
-              </h2>
+              <h2>{puzzleTitle(puzzle)}</h2>
               <span title={name}>{name}</span>
             </div>
             <div className="board-tools">
@@ -399,7 +432,7 @@ export default function App() {
               {view === 'photo' && review ? (
                 <img className="original-board" src={review.imageUrl} alt="Оригинал судоку для проверки" />
               ) : (
-                <Board
+                <PuzzleBoard
                   puzzle={puzzle}
                   values={values}
                   selected={selected}
@@ -429,9 +462,7 @@ export default function App() {
           </div>
           <div className="board-meta">
             <span>
-              {hasTask
-                ? `${filled} / ${puzzle.size * puzzle.size} клеток`
-                : 'Классические судоку 9×9 и 16×16'}
+              {hasTask ? `${filled} / ${puzzle.givens.length} клеток` : 'Судоку 9×9, 16×16 и связанные поля'}
             </span>
             {hasTask && (
               <button className="text-button" onClick={() => openOverlay('settings')}>
@@ -449,9 +480,7 @@ export default function App() {
                   style={cropStyle}
                 />
               )}
-              <span>
-                Строка {Math.floor(selected / puzzle.size) + 1}, столбец {(selected % puzzle.size) + 1}
-              </span>
+              <span>{selectedCellLabel}</span>
               <button className="text-button" onClick={() => openOverlay('editor')}>
                 <Pencil size={17} />
                 Правка
@@ -482,6 +511,11 @@ export default function App() {
                 <p className="review-count">Требуют внимания: {uncertain.size}</p>
               )}
             </div>
+            {needsChecking && uncertain.size > 0 && (
+              <button className="text-button next-uncertain" onClick={nextUncertain}>
+                Следующая сомнительная клетка
+              </button>
+            )}
             <div className={`solve-controls ${needsChecking ? 'needs-confirmation' : ''}`}>
               {!hasTask ? (
                 <>
@@ -654,7 +688,7 @@ export default function App() {
               <select
                 aria-label="Размер нового поля"
                 value={puzzle.size}
-                onChange={(event) => clear(Number(event.target.value) as BoardSize)}
+                onChange={(event) => clear(Number(event.target.value) as BoardSize, false)}
               >
                 <option value={9}>9 × 9</option>
                 <option value={16}>16 × 16</option>
@@ -704,7 +738,7 @@ export default function App() {
               />
             )}
             <p>
-              Строка {Math.floor(selected / puzzle.size) + 1}, столбец {(selected % puzzle.size) + 1}
+              {selectedCellLabel}
               {review && <small>Сверьте с печатным числом</small>}
             </p>
           </div>
@@ -748,13 +782,14 @@ export default function App() {
             <h3>От фотографии к решению</h3>
             <ol>
               <li>Сделайте или загрузите фото судоку.</li>
-              <li>Уточните границы поля и распознайте числа.</li>
+              <li>Проверьте найденные поля и их пересечения, затем распознайте числа.</li>
               <li>Сверьте числа с оригиналом, подтвердите проверку и запустите решение.</li>
             </ol>
             <h3>Что можно решать</h3>
             <p>
-              Классические судоку 9×9 с блоками 3×3 и 16×16 с блоками 4×4. Другие варианты пока не
-              поддерживаются.
+              Классические судоку 9×9 и 16×16, а также связанные поля 9×9 с общими блоками 3×3: два поля,
+              Самурай, восемь полей и другие составные схемы. Общие клетки решаются одновременно для всех
+              полей.
             </p>
             <h3>Исправление чисел</h3>
             <p>

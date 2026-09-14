@@ -1,4 +1,5 @@
 /* OpenCV runs in a classic worker so its WASM loader never blocks the page. */
+importScripts(new URL('./composition-vision.js', self.location.href).href)
 let ready
 function getCV() {
   if (!ready)
@@ -20,26 +21,34 @@ function ordered(points) {
   ]
 }
 
-function threshold(cv, src) {
+function threshold(cv, src, offset = 12, block = 31) {
   const gray = new cv.Mat(),
     binary = new cv.Mat()
   try {
     cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY)
-    cv.adaptiveThreshold(gray, binary, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 31, 12)
+    cv.adaptiveThreshold(
+      gray,
+      binary,
+      255,
+      cv.ADAPTIVE_THRESH_GAUSSIAN_C,
+      cv.THRESH_BINARY_INV,
+      block,
+      offset,
+    )
     return binary
   } finally {
     gray.delete()
   }
 }
 
-function warp(cv, src, corners, side) {
+function warp(cv, src, corners, side, height = side) {
   const from = cv.matFromArray(
     4,
     1,
     cv.CV_32FC2,
     corners.flatMap((p) => [p.x, p.y]),
   )
-  const to = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, side - 1, 0, side - 1, side - 1, 0, side - 1])
+  const to = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, side - 1, 0, side - 1, height - 1, 0, height - 1])
   const matrix = cv.getPerspectiveTransform(from, to)
   const dst = new cv.Mat()
   try {
@@ -47,7 +56,7 @@ function warp(cv, src, corners, side) {
       src,
       dst,
       matrix,
-      new cv.Size(side, side),
+      new cv.Size(side, height),
       cv.INTER_LINEAR,
       cv.BORDER_CONSTANT,
       new cv.Scalar(255, 255, 255, 255),
@@ -107,6 +116,9 @@ function lines(cv, binary, vertical) {
 }
 
 function detect(cv, src) {
+  const boards = detectComposition(cv, src)
+  if (boards) return { corners: boards[0].corners, detected: true, suggestedSize: 9, boards }
+
   const binary = threshold(cv, src),
     contours = new cv.MatVector(),
     hierarchy = new cv.Mat()
@@ -172,6 +184,11 @@ function boundaries(peaks, size, side) {
 
 function prepare(cv, src, corners, size) {
   const side = size === 16 ? 1536 : 1080
+  const sourcePitch =
+    (Math.hypot(corners[1].x - corners[0].x, corners[1].y - corners[0].y) +
+      Math.hypot(corners[3].x - corners[0].x, corners[3].y - corners[0].y)) /
+    (2 * size)
+  const smallPrint = sourcePitch < 45
   const rectified = warp(cv, src, corners, side)
   const cleaned = new cv.Mat()
   rectified.copyTo(cleaned)
@@ -231,7 +248,8 @@ function prepare(cv, src, corners, size) {
       }
     }
     const inkToneLimit = Math.min(0.72, inkReference + 0.19)
-    binary = threshold(cv, cleaned)
+    if (smallPrint) cv.GaussianBlur(cleaned, cleaned, new cv.Size(3, 3), 0)
+    binary = threshold(cv, cleaned, smallPrint ? 5 : 12, smallPrint ? 51 : 31)
     const inkKernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, new cv.Size(3, 3))
     try {
       cv.morphologyEx(binary, binary, cv.MORPH_OPEN, inkKernel)
@@ -304,6 +322,46 @@ function prepare(cv, src, corners, size) {
             continue
           }
           for (let p = 0; p < labels.data32S.length; p++) if (keep.has(labels.data32S[p])) glyph.data[p] = 255
+          // Two substantial enclosed counters in one connected glyph identify an 8.
+          // This image-only cross-check catches confident OCR confusions with 3;
+          // disagreements still require review and never consult sudoku constraints.
+          let digitHint
+          if (size === 9 && keep.size === 1) {
+            const outlines = new cv.MatVector(),
+              nesting = new cv.Mat()
+            const holes = []
+            try {
+              cv.findContours(glyph, outlines, nesting, cv.RETR_CCOMP, cv.CHAIN_APPROX_SIMPLE)
+              for (let j = 0; j < outlines.size(); j++) {
+                const outline = outlines.get(j)
+                try {
+                  if (
+                    nesting.data32S[j * 4 + 3] < 0 ||
+                    cv.contourArea(outline) < (maxX - minX) * (maxY - minY) * 0.025
+                  )
+                    continue
+                  const bounds = cv.boundingRect(outline)
+                  holes.push({
+                    x: bounds.x + bounds.width / 2,
+                    y: bounds.y + bounds.height / 2,
+                    height: bounds.height,
+                  })
+                } finally {
+                  outline.delete()
+                }
+              }
+              if (
+                holes.length === 2 &&
+                holes.every((hole) => hole.height > (maxY - minY) * 0.12) &&
+                Math.abs(holes[0].x - holes[1].x) < (maxX - minX) * 0.25 &&
+                Math.abs(holes[0].y - holes[1].y) > (maxY - minY) * 0.2
+              )
+                digitHint = 8
+            } finally {
+              outlines.delete()
+              nesting.delete()
+            }
+          }
           const cropped = glyph.roi(new cv.Rect(minX, minY, maxX - minX, maxY - minY))
           resized = new cv.Mat()
           padded = new cv.Mat()
@@ -323,6 +381,7 @@ function prepare(cv, src, corners, size) {
               index,
               rect: { x, y, w, h },
               empty: false,
+              digitHint,
               width: padded.cols,
               height: padded.rows,
               data: new Uint8Array(padded.data),

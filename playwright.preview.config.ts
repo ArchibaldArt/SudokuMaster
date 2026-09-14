@@ -12,8 +12,8 @@ export default defineConfig({
     {
       name: 'production',
       use: { ...devices['Desktop Chrome'] },
-      testMatch: /(?:app|photo|camera)\.spec\.ts/,
-      grep: /solves 9|clean printed|captures, retakes/,
+      testMatch: /(?:app|photo|camera|composite)\.spec\.ts/,
+      grep: /solves 9|clean printed|captures, retakes|recognizes, confirms, solves and exports twin/,
     },
     {
       name: 'production-mobile',

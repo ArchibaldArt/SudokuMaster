@@ -2,9 +2,13 @@ import { useEffect, useRef, useState } from 'react'
 import type { PointerEvent } from 'react'
 import { Check, LoaderCircle, RotateCw, ScanLine, X } from 'lucide-react'
 import type { BoardSize, Corners, RecognitionResult } from '../core/types'
+import { CompositionCrop } from './CompositionCrop'
+import { layouts } from '../core/topology'
+import type { LayoutName } from '../core/topology'
+import { photoGroups, photoLayoutError, photoTemplate, projectQuad } from '../core/photo-layout'
 import { validCorners } from '../core/geometry'
 import { PhotoProcessor, readPhoto, rotatePhoto } from '../services/photo'
-import type { PhotoProgress, PhotoSource } from '../services/photo'
+import type { Detection, PhotoBoard, PhotoProgress, PhotoSource } from '../services/photo'
 
 export function PhotoDialog({
   file,
@@ -19,6 +23,12 @@ export function PhotoDialog({
 }) {
   const [source, setSource] = useState<PhotoSource | null>(null)
   const [corners, setCorners] = useState<Corners | null>(null)
+  const [boards, setBoards] = useState<PhotoBoard[] | null>(null)
+  const [groups, setGroups] = useState<PhotoBoard[][]>([])
+  const [editing, setEditing] = useState(false)
+  const [activeBoard, setActiveBoard] = useState(-1)
+  const [addX, setAddX] = useState(6)
+  const [addY, setAddY] = useState(6)
   const [size, setSize] = useState(initialSize)
   const [phase, setPhase] = useState<'detecting' | 'crop' | 'recognizing'>('detecting')
   const [detected, setDetected] = useState(false)
@@ -29,6 +39,35 @@ export function PhotoDialog({
   const dialog = useRef<HTMLDivElement>(null)
   const svg = useRef<SVGSVGElement>(null)
   const busy = phase !== 'crop'
+  const chooseGroup = (group: PhotoBoard[]) => {
+    setBoards(group.length > 1 ? group : null)
+    setEditing(false)
+    setActiveBoard(-1)
+    if (group.length === 1) {
+      setCorners(group[0].corners)
+      return
+    }
+    const points = group.flatMap((b) => b.corners),
+      xs = points.map((p) => p.x),
+      ys = points.map((p) => p.y)
+    setCorners([
+      { x: Math.min(...xs), y: Math.min(...ys) },
+      { x: Math.max(...xs), y: Math.min(...ys) },
+      { x: Math.max(...xs), y: Math.max(...ys) },
+      { x: Math.min(...xs), y: Math.max(...ys) },
+    ])
+  }
+  const applyDetection = (result: Detection) => {
+    setCorners(result.corners)
+    setDetected(result.detected)
+    if (result.suggestedSize) setSize(result.suggestedSize)
+    const groups = result.boards ? photoGroups(result.boards) : []
+    setGroups(groups.length > 1 ? groups : [])
+    setBoards(null)
+    setEditing(false)
+    setActiveBoard(-1)
+    if (groups[0]) chooseGroup(groups[0])
+  }
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null
     const overflow = document.body.style.overflow
@@ -45,9 +84,7 @@ export function PhotoDialog({
         setSource(photo)
         const result = await service.detect(photo)
         if (cancelled) return
-        setCorners(result.corners)
-        setDetected(result.detected)
-        if (result.suggestedSize) setSize(result.suggestedSize)
+        applyDetection(result)
         setPhase('crop')
       } catch (e) {
         if (!cancelled) {
@@ -74,8 +111,7 @@ export function PhotoDialog({
     try {
       const result = await processor.current!.detect(next)
       if (!alive.current) return
-      setCorners(result.corners)
-      setDetected(result.detected)
+      applyDetection(result)
     } catch (e) {
       if (alive.current) setError(e instanceof Error ? e.message : 'Ошибка обработки')
     } finally {
@@ -100,9 +136,15 @@ export function PhotoDialog({
     setPhase('recognizing')
     setError('')
     try {
-      const result = await processor.current!.recognize(source, corners, size, (p) => {
-        if (alive.current) setProgress(p)
-      })
+      const result = await processor.current!.recognize(
+        source,
+        corners,
+        size,
+        (p) => {
+          if (alive.current) setProgress(p)
+        },
+        boards ?? undefined,
+      )
       if (alive.current) onRecognized(result)
     } catch (e) {
       if (alive.current) {
@@ -111,7 +153,39 @@ export function PhotoDialog({
       }
     }
   }
-  const valid = !!source && !!corners && validCorners(corners, source.image.width, source.image.height)
+  const layoutError =
+    source && boards ? photoLayoutError(boards, source.image.width, source.image.height) : ''
+  const valid =
+    !!source &&
+    !!corners &&
+    (boards ? !layoutError : validCorners(corners, source.image.width, source.image.height))
+  const useTemplate = (name: string) => {
+    if (!source || !corners) return
+    if (name === 'classic') {
+      setBoards(null)
+      setGroups([])
+      setEditing(false)
+      return
+    }
+    const origins = layouts[name as LayoutName].boards
+    const width = Math.max(...origins.map((b) => b.x)) + 9,
+      height = Math.max(...origins.map((b) => b.y)) + 9
+    const scale = Math.min(source.image.width / width, source.image.height / height) * 0.9
+    const x = (source.image.width - width * scale) / 2,
+      y = (source.image.height - height * scale) / 2
+    const frame: Corners = [
+      { x, y },
+      { x: x + width * scale, y },
+      { x: x + width * scale, y: y + height * scale },
+      { x, y: y + height * scale },
+    ]
+    setCorners(frame)
+    setBoards(photoTemplate(origins, frame))
+    setSize(9)
+    setGroups([])
+    setActiveBoard(-1)
+    setEditing(true)
+  }
   return (
     <div
       className="modal-backdrop"
@@ -148,7 +222,11 @@ export function PhotoDialog({
           <div>
             <span className="eyebrow">ИЗ ФОТОГРАФИИ В ПОЛЕ</span>
             <h2 id="photo-title">
-              {phase === 'recognizing' ? 'Распознаём вашу задачу' : 'Проверьте границы судоку'}
+              {phase === 'recognizing'
+                ? 'Распознаём вашу задачу'
+                : boards
+                  ? 'Проверьте поля'
+                  : 'Проверьте границы судоку'}
             </h2>
           </div>
           <button className="icon-button" onClick={onClose} aria-label="Закрыть обработку фотографии">
@@ -159,72 +237,97 @@ export function PhotoDialog({
           <p className="dialog-description">
             {phase === 'recognizing'
               ? 'Выделяем печатные числа. После распознавания вы сможете проверить и исправить каждую клетку.'
-              : 'Перетащите четыре точки к внешним углам сетки. Числа должны читаться сверху вниз.'}
+              : boards
+                ? `Найдено ${boards.length} полей. Проверьте рамки и общие блоки.`
+                : 'Перетащите четыре точки к внешним углам сетки. Числа должны читаться сверху вниз.'}
           </p>
           <div className="crop-stage">
-            {source && (
-              <svg
-                ref={svg}
-                viewBox={`0 0 ${source.image.width} ${source.image.height}`}
-                style={{ aspectRatio: `${source.image.width}/${source.image.height}` }}
-                aria-label="Выделение границ поля"
-              >
-                <image href={source.url} width={source.image.width} height={source.image.height} />
-                {corners && (
-                  <>
-                    <polygon
-                      points={corners.map((p) => `${p.x},${p.y}`).join(' ')}
-                      fill="rgba(36,87,214,.08)"
-                      stroke={valid ? '#729aff' : '#f3997f'}
-                      strokeWidth={Math.max(3, source.image.width / 240)}
-                    />
-                    {!busy &&
-                      corners.map((p, i) => (
-                        <circle
-                          key={i}
-                          cx={p.x}
-                          cy={p.y}
-                          r={source.image.width / 45}
-                          fill="#fff"
-                          stroke="#2457d6"
-                          strokeWidth={source.image.width / 300}
-                          tabIndex={0}
-                          role="button"
-                          aria-label={`Угол ${['сверху слева', 'сверху справа', 'снизу справа', 'снизу слева'][i]}`}
-                          onPointerDown={(event) => {
-                            event.currentTarget.setPointerCapture(event.pointerId)
-                            event.preventDefault()
-                          }}
-                          onPointerMove={(event) => move(event, i)}
-                          onPointerUp={(event) => event.currentTarget.releasePointerCapture(event.pointerId)}
-                          onKeyDown={(event) => {
-                            const directions: Record<string, [number, number]> = {
-                              ArrowLeft: [-1, 0],
-                              ArrowRight: [1, 0],
-                              ArrowUp: [0, -1],
-                              ArrowDown: [0, 1],
-                            }
-                            if (directions[event.key]) {
+            {source && boards && corners ? (
+              <CompositionCrop
+                source={source}
+                boards={boards}
+                frame={corners}
+                active={activeBoard}
+                editing={editing && !busy}
+                onChange={setBoards}
+                onSelect={(i) => {
+                  if (!busy) {
+                    setActiveBoard(i)
+                    setEditing(true)
+                  }
+                }}
+                onFrame={(frame) => {
+                  setCorners(frame)
+                  setBoards(photoTemplate(boards, frame))
+                }}
+              />
+            ) : (
+              source && (
+                <svg
+                  ref={svg}
+                  viewBox={`0 0 ${source.image.width} ${source.image.height}`}
+                  style={{ aspectRatio: `${source.image.width}/${source.image.height}` }}
+                  aria-label="Выделение границ поля"
+                >
+                  <image href={source.url} width={source.image.width} height={source.image.height} />
+                  {corners && (
+                    <>
+                      <polygon
+                        points={corners.map((p) => `${p.x},${p.y}`).join(' ')}
+                        fill="rgba(36,87,214,.08)"
+                        stroke={valid ? '#729aff' : '#f3997f'}
+                        strokeWidth={Math.max(3, source.image.width / 240)}
+                      />
+                      {!busy &&
+                        corners.map((p, i) => (
+                          <circle
+                            key={i}
+                            cx={p.x}
+                            cy={p.y}
+                            r={source.image.width / 45}
+                            fill="#fff"
+                            stroke="#2457d6"
+                            strokeWidth={source.image.width / 300}
+                            tabIndex={0}
+                            role="button"
+                            aria-label={`Угол ${['сверху слева', 'сверху справа', 'снизу справа', 'снизу слева'][i]}`}
+                            onPointerDown={(event) => {
+                              event.currentTarget.setPointerCapture(event.pointerId)
                               event.preventDefault()
-                              const [dx, dy] = directions[event.key],
-                                step = source.image.width / 200
-                              setCorners(
-                                corners.map((point, k) =>
-                                  k === i
-                                    ? {
-                                        x: Math.max(0, Math.min(source.image.width, point.x + dx * step)),
-                                        y: Math.max(0, Math.min(source.image.height, point.y + dy * step)),
-                                      }
-                                    : point,
-                                ) as Corners,
-                              )
+                            }}
+                            onPointerMove={(event) => move(event, i)}
+                            onPointerUp={(event) =>
+                              event.currentTarget.releasePointerCapture(event.pointerId)
                             }
-                          }}
-                        />
-                      ))}
-                  </>
-                )}
-              </svg>
+                            onKeyDown={(event) => {
+                              const directions: Record<string, [number, number]> = {
+                                ArrowLeft: [-1, 0],
+                                ArrowRight: [1, 0],
+                                ArrowUp: [0, -1],
+                                ArrowDown: [0, 1],
+                              }
+                              if (directions[event.key]) {
+                                event.preventDefault()
+                                const [dx, dy] = directions[event.key],
+                                  step = source.image.width / 200
+                                setCorners(
+                                  corners.map((point, k) =>
+                                    k === i
+                                      ? {
+                                          x: Math.max(0, Math.min(source.image.width, point.x + dx * step)),
+                                          y: Math.max(0, Math.min(source.image.height, point.y + dy * step)),
+                                        }
+                                      : point,
+                                  ) as Corners,
+                                )
+                              }
+                            }}
+                          />
+                        ))}
+                    </>
+                  )}
+                </svg>
+              )
             )}
             {busy && (
               <div className="processing-overlay">
@@ -243,6 +346,167 @@ export function PhotoDialog({
               </div>
             )}
           </div>
+          {!busy && source && (
+            <div className="layout-tools">
+              {boards?.some((b) => b.confidence > 0 && b.confidence < 0.94) && (
+                <p className="detection-note">
+                  Некоторые границы найдены приблизительно. Проверьте все поля перед распознаванием.
+                </p>
+              )}
+              {groups.length > 1 && (
+                <label>
+                  На фото несколько задач
+                  <select
+                    aria-label="Выбрать задачу на фото"
+                    onChange={(e) => {
+                      chooseGroup(groups[Number(e.target.value)])
+                    }}
+                  >
+                    {groups.map((g, i) => (
+                      <option value={i} key={i}>
+                        Задача {i + 1} · {g.length} полей
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              {boards && (
+                <button className="text-button" onClick={() => setEditing(!editing)}>
+                  {editing ? 'Закончить правку схемы' : 'Исправить схему'}
+                </button>
+              )}
+              <details className="layout-presets">
+                <summary>Выбрать другую схему</summary>
+                <div className="layout-presets-list">
+                  <button className="button secondary small" onClick={() => useTemplate('classic')}>
+                    Одно поле
+                  </button>
+                  {(Object.keys(layouts) as LayoutName[]).map((n) => (
+                    <button className="button secondary small" key={n} onClick={() => useTemplate(n)}>
+                      {layouts[n].name}
+                    </button>
+                  ))}
+                </div>
+              </details>
+              {boards && editing && (
+                <div className="layout-editor">
+                  <label>
+                    Поправить границы
+                    <select
+                      aria-label="Поле для правки границ"
+                      value={activeBoard}
+                      onChange={(e) => setActiveBoard(Number(e.target.value))}
+                    >
+                      <option value={-1}>Вся схема</option>
+                      {boards.map((_, i) => (
+                        <option key={i} value={i}>
+                          Поле {i + 1}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <p>
+                    Перетащите четыре точки к углам. Выберите отдельное поле, чтобы рассмотреть его крупнее.
+                  </p>
+                  {activeBoard >= 0 && boards[activeBoard] && (
+                    <>
+                      <label>
+                        Позиция поля по горизонтали (блоки)
+                        <input
+                          type="number"
+                          min={0}
+                          max={30}
+                          value={boards[activeBoard].x / 3}
+                          onChange={(e) =>
+                            setBoards(
+                              boards.map((b, i) =>
+                                i === activeBoard ? { ...b, x: Number(e.target.value) * 3 } : b,
+                              ),
+                            )
+                          }
+                        />
+                      </label>
+                      <label>
+                        Позиция поля по вертикали (блоки)
+                        <input
+                          type="number"
+                          min={0}
+                          max={30}
+                          value={boards[activeBoard].y / 3}
+                          onChange={(e) =>
+                            setBoards(
+                              boards.map((b, i) =>
+                                i === activeBoard ? { ...b, y: Number(e.target.value) * 3 } : b,
+                              ),
+                            )
+                          }
+                        />
+                      </label>
+                      <button
+                        className="button secondary small"
+                        disabled={boards.length <= 1}
+                        onClick={() => {
+                          setBoards(boards.filter((_, i) => i !== activeBoard))
+                          setActiveBoard(-1)
+                        }}
+                      >
+                        Удалить поле {activeBoard + 1}
+                      </button>
+                    </>
+                  )}
+                  <details>
+                    <summary>Добавить пропущенное поле</summary>
+                    <p>Позиция верхнего левого угла: 0 — первый блок схемы. Общие блоки должны совпадать.</p>
+                    <label>
+                      Блок по горизонтали
+                      <input
+                        aria-label="Новое поле: блок по горизонтали"
+                        type="number"
+                        min={0}
+                        max={30}
+                        value={addX / 3}
+                        onChange={(e) => setAddX(Number(e.target.value) * 3)}
+                      />
+                    </label>
+                    <label>
+                      Блок по вертикали
+                      <input
+                        aria-label="Новое поле: блок по вертикали"
+                        type="number"
+                        min={0}
+                        max={30}
+                        value={addY / 3}
+                        onChange={(e) => setAddY(Number(e.target.value) * 3)}
+                      />
+                    </label>
+                    <button
+                      className="button secondary small"
+                      onClick={() => {
+                        const anchor = boards[Math.max(0, activeBoard)]
+                        const quad = [
+                          [addX, addY],
+                          [addX + 9, addY],
+                          [addX + 9, addY + 9],
+                          [addX, addY + 9],
+                        ].map(([x, y]) => {
+                          const p = projectQuad(anchor.corners, (x - anchor.x) / 9, (y - anchor.y) / 9)
+                          return {
+                            x: Math.max(0, Math.min(source.image.width, p.x)),
+                            y: Math.max(0, Math.min(source.image.height, p.y)),
+                          }
+                        }) as Corners
+                        const next: PhotoBoard = { x: addX, y: addY, corners: quad, confidence: 0 }
+                        setBoards([...boards, next])
+                        setActiveBoard(boards.length)
+                      }}
+                    >
+                      Добавить поле
+                    </button>
+                  </details>
+                </div>
+              )}
+            </div>
+          )}
           {error && (
             <p className="error-message" role="alert">
               {error} Ручной ввод доступен после закрытия этого окна.
@@ -262,25 +526,44 @@ export function PhotoDialog({
                   'Укажите границы вручную'
                 )}
               </span>
-              <label>
-                Размер{' '}
-                <select value={size} onChange={(event) => setSize(Number(event.target.value) as BoardSize)}>
-                  <option value={9}>9 × 9</option>
-                  <option value={16}>16 × 16</option>
-                </select>
-              </label>
+              {!boards && (
+                <label>
+                  Размер{' '}
+                  <select value={size} onChange={(event) => setSize(Number(event.target.value) as BoardSize)}>
+                    <option value={9}>9 × 9</option>
+                    <option value={16}>16 × 16</option>
+                  </select>
+                </label>
+              )}
             </div>
           )}
           {!busy && corners && !valid && (
-            <p className="error-message">Поправьте углы: границы не должны пересекаться.</p>
+            <p className="error-message" role="alert">
+              {layoutError || 'Поправьте углы: границы не должны пересекаться.'}
+            </p>
           )}
         </div>
         <div className="dialog-actions">
           <button className="button secondary" onClick={onClose}>
             {busy ? 'Отменить' : 'Назад'}
           </button>
-          <button className="button primary" disabled={busy || !valid} onClick={() => void recognize()}>
-            <ScanLine size={18} /> <span>Распознать числа</span>
+          <button
+            className="button primary"
+            disabled={busy || !valid}
+            onClick={() => void recognize()}
+            aria-label={boards ? 'Схема верна — распознать числа' : 'Распознать числа'}
+          >
+            <ScanLine size={18} />{' '}
+            {boards ? (
+              <>
+                <span className="photo-action-long">Схема верна — распознать числа</span>
+                <span className="photo-action-short" aria-hidden="true">
+                  Распознать числа
+                </span>
+              </>
+            ) : (
+              <span>Распознать числа</span>
+            )}
           </button>
         </div>
       </div>

@@ -1,4 +1,7 @@
 import type { BoardSize, CellRecognition, Corners, RecognitionResult } from '../core/types'
+import { photoLayoutError } from '../core/photo-layout'
+import { emptyLayout, topology } from '../core/topology'
+import { emptyPuzzle } from '../core/types'
 import { validCorners } from '../core/geometry'
 
 export interface PhotoSource {
@@ -6,7 +9,14 @@ export interface PhotoSource {
   url: string
   name: string
 }
+export interface PhotoBoard {
+  x: number
+  y: number
+  corners: Corners
+  confidence: number
+}
 export interface Detection {
+  boards?: PhotoBoard[]
   corners: Corners
   detected: boolean
   suggestedSize: BoardSize | null
@@ -16,6 +26,7 @@ interface PreparedCell {
   rect: CellRecognition['rect']
   empty: boolean
   ambiguous: boolean
+  digitHint?: 8
   width?: number
   height?: number
   data?: Uint8Array
@@ -186,14 +197,19 @@ export class PhotoProcessor {
     corners: Corners,
     size: BoardSize,
     progress: (p: PhotoProgress) => void,
+    boards?: PhotoBoard[],
   ): Promise<RecognitionResult> {
-    if (!validCorners(corners, source.image.width, source.image.height))
-      throw new Error('Углы поля должны образовывать четырёхугольник без пересечений. Поправьте выделение.')
-    progress({ fraction: 0.03, label: 'Выравниваем поле и отделяем печатные числа…' })
-    const prepared = await this.request<Prepared>('prepare', source, { corners, size })
-    this.check()
-    const url = imageUrl(new ImageData(new Uint8ClampedArray(prepared.data), prepared.width, prepared.height))
-    progress({ fraction: 0.12, label: 'Загружаем распознавание. В первый раз это займёт чуть дольше…' })
+    if (boards) {
+      const error = photoLayoutError(boards, source.image.width, source.image.height)
+      if (error) throw new Error(error)
+    }
+    const puzzle = boards ? emptyLayout(boards) : emptyPuzzle(size)
+    const geometry = topology(puzzle)
+    const plans = boards ?? [{ corners }]
+    for (const plan of plans)
+      if (!validCorners(plan.corners, source.image.width, source.image.height, boards ? 0.0001 : 0.04))
+        throw new Error('Углы поля должны образовывать четырёхугольник без пересечений. Поправьте выделение.')
+    progress({ fraction: 0.01, label: 'Загружаем распознавание. В первый раз это займёт чуть дольше…' })
     try {
       await this.requestOCR('init', {
         paths: {
@@ -202,60 +218,102 @@ export class PhotoProcessor {
           langPath: localAsset('vendor/tesseract/lang'),
         },
       })
-      this.check()
-      const occupied = prepared.cells.filter((cell) => !cell.empty)
-      const cells: CellRecognition[] = []
-      let done = 0
-      for (const cell of prepared.cells) {
+      const cells = new Array<CellRecognition>(geometry.cells.length)
+      let url = source.url,
+        width = source.image.width,
+        height = source.image.height
+      for (let b = 0; b < plans.length; b++) {
         this.check()
-        if (cell.empty) {
-          cells.push({
-            index: cell.index,
-            rect: cell.rect,
-            value: 0,
-            confidence: 0,
-            needsReview: cell.ambiguous,
-            raw: '',
-          })
-          continue
-        }
-        const canvas = document.createElement('canvas')
-        canvas.width = cell.width!
-        canvas.height = cell.height!
-        const context = canvas.getContext('2d')!
-        const rgba = new Uint8ClampedArray(cell.data!.length * 4)
-        for (let i = 0; i < cell.data!.length; i++) {
-          rgba[i * 4] = rgba[i * 4 + 1] = rgba[i * 4 + 2] = cell.data![i]
-          rgba[i * 4 + 3] = 255
-        }
-        context.putImageData(new ImageData(rgba, canvas.width, canvas.height), 0, 0)
-        const data = await this.requestOCR<{ text: string; confidence: number }>('recognize', {
-          image: canvas.toDataURL('image/png'),
-        })
-        this.check()
-        const raw = data.text.trim()
-        const parsed = /^\d{1,2}$/.test(raw) ? Number(raw) : 0
-        const value = parsed >= 1 && parsed <= size ? parsed : 0
-        cells.push({
-          index: cell.index,
-          rect: cell.rect,
-          value,
-          confidence: data.confidence,
-          raw,
-          needsReview: !value || data.confidence < 75 || cell.ambiguous,
-        })
-        done++
+        const prefix = boards ? `Поле ${b + 1} из ${plans.length}. ` : ''
         progress({
-          fraction: 0.18 + (0.82 * done) / Math.max(1, occupied.length),
-          label: `Распознано чисел: ${done} из ${occupied.length}`,
+          fraction: 0.08 + (0.92 * b) / plans.length,
+          label: `${prefix}Выравниваем поле и отделяем печатные числа…`,
         })
+        const prepared = await this.request<Prepared>('prepare', source, {
+          corners: plans[b].corners,
+          size: puzzle.size,
+        })
+        this.check()
+        const original = document.createElement('canvas')
+        original.width = prepared.width
+        original.height = prepared.height
+        original
+          .getContext('2d')!
+          .putImageData(
+            new ImageData(new Uint8ClampedArray(prepared.data), prepared.width, prepared.height),
+            0,
+            0,
+          )
+        if (!boards) {
+          url = original.toDataURL('image/jpeg', 0.91)
+          width = prepared.width
+          height = prepared.height
+        }
+        const owned = prepared.cells.filter(
+          (c) => geometry.cells[geometry.boards[b].cells[c.index]].boards[0] === b,
+        )
+        const occupied = owned.filter((c) => !c.empty).length
+        let done = 0
+        for (const cell of owned) {
+          this.check()
+          const index = geometry.boards[b].cells[cell.index]
+          let previewUrl: string | undefined
+          if (boards) {
+            const preview = document.createElement('canvas')
+            preview.width = 112
+            preview.height = 112
+            preview
+              .getContext('2d')!
+              .drawImage(original, cell.rect.x, cell.rect.y, cell.rect.w, cell.rect.h, 0, 0, 112, 112)
+            previewUrl = preview.toDataURL('image/jpeg', 0.9)
+          }
+          if (cell.empty) {
+            cells[index] = {
+              index,
+              rect: cell.rect,
+              previewUrl,
+              value: 0,
+              confidence: 0,
+              needsReview: cell.ambiguous,
+              raw: '',
+            }
+            continue
+          }
+          const canvas = document.createElement('canvas')
+          canvas.width = cell.width!
+          canvas.height = cell.height!
+          const rgba = new Uint8ClampedArray(cell.data!.length * 4)
+          for (let i = 0; i < cell.data!.length; i++) {
+            rgba[i * 4] = rgba[i * 4 + 1] = rgba[i * 4 + 2] = cell.data![i]
+            rgba[i * 4 + 3] = 255
+          }
+          canvas.getContext('2d')!.putImageData(new ImageData(rgba, canvas.width, canvas.height), 0, 0)
+          const data = await this.requestOCR<{ text: string; confidence: number }>('recognize', {
+            image: canvas.toDataURL('image/png'),
+          })
+          this.check()
+          const raw = data.text.trim(),
+            parsed = /^\d{1,2}$/.test(raw) ? Number(raw) : 0
+          const recognizedValue = parsed >= 1 && parsed <= puzzle.size ? parsed : 0
+          const value = cell.digitHint ?? recognizedValue
+          cells[index] = {
+            index,
+            rect: cell.rect,
+            previewUrl,
+            value,
+            confidence: data.confidence,
+            raw,
+            needsReview: !value || data.confidence < 75 || cell.ambiguous || value !== recognizedValue,
+          }
+          done++
+          progress({
+            fraction: 0.08 + (0.92 * (b + done / Math.max(1, occupied))) / plans.length,
+            label: `${prefix}Распознано чисел: ${done} из ${occupied}`,
+          })
+        }
       }
-      return {
-        puzzle: { size, boxSize: size === 9 ? 3 : 4, givens: cells.map((cell) => cell.value) },
-        cells,
-        imageUrl: url,
-        imageSize: { width: prepared.width, height: prepared.height },
-      }
+      puzzle.givens = cells.map((c) => c.value)
+      return { puzzle, cells, imageUrl: url, imageSize: { width, height } }
     } finally {
       this.ocr?.terminate()
       this.ocr = null

@@ -1,6 +1,6 @@
 import type { Corners } from './types'
 
-export function validCorners(points: Corners, width: number, height: number): boolean {
+export function validCorners(points: Corners, width: number, height: number, minArea = 0.04): boolean {
   if (
     points.some(
       (p) =>
@@ -16,5 +16,5 @@ export function validCorners(points: Corners, width: number, height: number): bo
     if ((b.x - a.x) * (c.y - b.y) - (b.y - a.y) * (c.x - b.x) <= 0) return false
     area += a.x * b.y - b.x * a.y
   }
-  return area / 2 > width * height * 0.04
+  return area / 2 > width * height * minArea
 }

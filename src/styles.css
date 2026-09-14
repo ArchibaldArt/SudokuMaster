@@ -1156,3 +1156,178 @@ select {
     scroll-behavior: auto !important;
   }
 }
+
+/* Linked puzzles keep the same canonical cells in the overview and focused board. */
+.has-composition .board-stage {
+  width: 100%;
+  min-width: 0;
+}
+.has-composition .board-title {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+.has-composition .board-title h2 {
+  white-space: normal;
+  font-size: 19px;
+}
+.composite-grid {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  overflow: visible;
+}
+.composite-grid .cell {
+  background-color: white;
+}
+.composite-grid .cell.related {
+  background-color: #f5f7fc;
+}
+.composite-grid .cell.same {
+  background-color: #eaf0fe;
+}
+.composite-grid .cell.selected {
+  background-color: #dce7ff;
+}
+.composite-grid .cell.uncertain {
+  background-color: #fff9e9;
+}
+.composite-grid .cell.conflict {
+  background-color: #fff0f0;
+}
+.composite-grid .cell.guess {
+  background-color: #fff4d9;
+}
+.composite-grid .cell input {
+  font-size: 20px;
+}
+.composition-scroll {
+  overflow: auto;
+  max-height: 72dvh;
+  overscroll-behavior: contain;
+  padding: 1px;
+}
+.composition-nav {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 0 0 12px;
+}
+.composition-map {
+  flex: 0 0 95px;
+  width: 95px;
+  height: 128px;
+}
+.composition-map g {
+  cursor: pointer;
+}
+.composition-map g:focus {
+  outline: none;
+}
+.composition-map g:focus rect {
+  stroke: #172033;
+  stroke-width: 0.6;
+}
+.composition-controls {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+.composition-controls label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 16px;
+}
+.composition-controls select {
+  max-width: 100%;
+}
+.composition-scale {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.next-uncertain {
+  margin-bottom: 12px;
+}
+@media (max-width: 900px) {
+  .composition-nav {
+    gap: 12px;
+  }
+  .composition-map {
+    height: 108px;
+    flex-basis: 76px;
+  }
+  .composition-scroll {
+    max-height: none;
+  }
+  .is-zoomed .has-composition .board-stage {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+.layout-tools {
+  display: grid;
+  gap: 12px;
+  padding-top: 12px;
+  font-size: 16px;
+}
+.layout-tools summary {
+  cursor: pointer;
+  color: var(--muted);
+  padding: 8px 0;
+}
+.layout-presets-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 8px;
+}
+.layout-editor {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.layout-tools label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.layout-tools input {
+  width: 90px;
+  min-height: 44px;
+  padding: 8px;
+  font: inherit;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.layout-tools select {
+  max-width: 100%;
+}
+@media (max-width: 600px) {
+  .photo-dialog .dialog-actions .button {
+    overflow-wrap: anywhere;
+  }
+}
+
+.photo-action-short {
+  display: none;
+}
+@media (max-width: 600px) {
+  .photo-action-long {
+    display: none;
+  }
+  .photo-action-short {
+    display: inline;
+  }
+  .photo-dialog > .dialog-actions > .button {
+    padding-inline: 12px;
+    gap: 8px;
+  }
+}

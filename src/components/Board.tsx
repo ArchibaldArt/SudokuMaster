@@ -1,8 +1,10 @@
-import { useRef } from 'react'
+import { useMemo, useRef } from 'react'
 import type { CSSProperties, KeyboardEvent } from 'react'
+import { cellLabel, topology } from '../core/topology'
 import type { PlacementKind, PuzzleDefinition } from '../core/types'
 
-interface Props {
+export interface BoardProps {
+  focusBoard?: number | null
   puzzle: PuzzleDefinition
   values: number[]
   selected: number | null
@@ -27,36 +29,92 @@ export function Board({
   solved,
   onSelect,
   onChange,
-}: Props) {
+  focusBoard = null,
+}: BoardProps) {
   const inputs = useRef<(HTMLInputElement | null)[]>([])
   const { size, boxSize } = puzzle
+  const geometry = useMemo(() => topology(puzzle), [puzzle])
+  const focus = focusBoard === null ? null : geometry.boards[focusBoard]
+  const indices = focus ? focus.cells : values.map((_, i) => i)
+  const columns = focus ? size : geometry.width
+  const rows = focus ? size : geometry.height
+  const relatedCells = new Set(
+    selected === null ? [] : geometry.cellUnits[selected]?.flatMap((u) => geometry.units[u]),
+  )
+  const currentTab = selected !== null && indices.includes(selected) ? selected : indices[0]
   const keyDown = (event: KeyboardEvent<HTMLInputElement>, index: number) => {
-    const deltas: Record<string, number> = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: size, ArrowUp: -size }
+    const deltas: Record<string, [number, number]> = {
+      ArrowRight: [1, 0],
+      ArrowLeft: [-1, 0],
+      ArrowDown: [0, 1],
+      ArrowUp: [0, -1],
+    }
     if (event.key in deltas) {
       event.preventDefault()
-      const next = (index + deltas[event.key] + size * size) % (size * size)
-      inputs.current[next]?.focus()
-      inputs.current[next]?.select()
+      const [dx, dy] = deltas[event.key]
+      const cell = geometry.cells[index]
+      let x = cell.x,
+        y = cell.y
+      for (let k = 0; k < geometry.width * geometry.height; k++) {
+        x = (x + dx + geometry.width) % geometry.width
+        y = (y + dy + geometry.height) % geometry.height
+        const next = geometry.at.get(`${x},${y}`)
+        if (next !== undefined && indices.includes(next)) {
+          inputs.current[next]?.focus()
+          inputs.current[next]?.select()
+          break
+        }
+      }
     }
   }
+
   return (
     <div
-      className={`sudoku-grid size-${size} ${solved ? 'is-solved' : ''}`}
+      className={`sudoku-grid size-${size} ${puzzle.boards ? 'composite-grid' : ''} ${solved ? 'is-solved' : ''}`}
       role="grid"
       aria-readonly={locked}
-      aria-label={`Поле судоку ${size} на ${size}`}
-      style={{ '--size': size } as CSSProperties}
+      aria-label={
+        puzzle.boards
+          ? focusBoard === null
+            ? `Составное судоку из ${geometry.boards.length} полей`
+            : `Поле ${focusBoard + 1} из ${geometry.boards.length}`
+          : `Поле судоку ${size} на ${size}`
+      }
+      aria-rowcount={rows}
+      aria-colcount={columns}
+      style={{ '--size': columns, aspectRatio: `${columns}/${rows}` } as CSSProperties}
     >
-      {values.map((value, index) => {
-        const r = Math.floor(index / size),
-          c = index % size
+      {indices.map((index) => {
+        const value = values[index],
+          position = geometry.cells[index]
+        const r = position.y - (focus?.y ?? 0),
+          c = position.x - (focus?.x ?? 0)
         const active = selected === index
         const same = selected !== null && value > 0 && values[selected] === value
-        const related = selected !== null && (r === Math.floor(selected / size) || c === selected % size)
+        const related = relatedCells.has(index)
         return (
           <div
             key={index}
             role="gridcell"
+            data-cell-id={index}
+            aria-rowindex={r + 1}
+            aria-colindex={c + 1}
+            style={
+              puzzle.boards
+                ? {
+                    gridColumn: c + 1,
+                    gridRow: r + 1,
+                    borderRight: (c + 1) % boxSize === 0 ? '2px solid #7c89a0' : '1px solid #dce2ed',
+                    borderBottom: (r + 1) % boxSize === 0 ? '2px solid #7c89a0' : '1px solid #dce2ed',
+                    borderLeft: (focus ? c === 0 : !geometry.at.has(`${position.x - 1},${position.y}`))
+                      ? '2px solid #43536e'
+                      : undefined,
+                    borderTop: (focus ? r === 0 : !geometry.at.has(`${position.x},${position.y - 1}`))
+                      ? '2px solid #43536e'
+                      : undefined,
+                  }
+                : undefined
+            }
             className={[
               'cell',
               puzzle.givens[index] ? 'given' : 'found',
@@ -84,9 +142,9 @@ export function Board({
               maxLength={size === 9 ? 1 : 2}
               value={value || ''}
               readOnly={locked}
-              aria-label={`Строка ${r + 1}, столбец ${c + 1}`}
+              aria-label={cellLabel(puzzle, index)}
               aria-invalid={conflicts.has(index)}
-              tabIndex={!locked && index === (selected ?? 0) ? 0 : -1}
+              tabIndex={!locked && index === currentTab ? 0 : -1}
               onFocus={(event) => {
                 onSelect(index)
                 event.target.select()
