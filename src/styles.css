@@ -102,6 +102,20 @@ svg {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
+}
+.brand-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 6px;
+  min-width: 0;
+}
+.app-version {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 .brand-mark {
   display: grid;
@@ -111,11 +125,13 @@ svg {
   background: var(--accent);
   color: white;
   border-radius: 9px;
+  flex-shrink: 0;
 }
 .brand h1 {
   font-size: 21px;
   font-weight: 750;
   letter-spacing: -0.7px;
+  white-space: nowrap;
 }
 .brand h1 span {
   font-weight: 450;
@@ -211,6 +227,7 @@ svg {
   padding: 8px 12px 4px;
 }
 .workspace {
+  --board-panel-height: calc(100dvh - 112px);
   width: min(1440px, 100%);
   margin: 0 auto;
   padding: 24px;
@@ -220,11 +237,27 @@ svg {
   align-items: start;
 }
 .board-panel {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
   padding: 16px 20px;
   background: white;
   border: 1px solid var(--line);
   border-radius: 16px;
+}
+.board-panel.has-task {
+  max-height: var(--board-panel-height);
+}
+.board-panel > :not(.board-scroll),
+.composition-nav {
+  flex-shrink: 0;
+}
+.board-scroll,
+.board-stage,
+.composite-workspace {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 .board-heading {
   display: flex;
@@ -261,9 +294,61 @@ svg {
 .board-scroll {
   max-width: 100%;
 }
+.board-scale {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  margin: -4px 0 10px;
+}
+.board-scale .icon-button,
+.scale-value {
+  min-width: 44px;
+  min-height: 44px;
+}
+.scale-value {
+  min-width: 66px;
+  color: var(--muted);
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  border-radius: 6px;
+}
+.grid-viewport {
+  --board-base-width: min(100%, 760px, calc(100dvh - 244px));
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.scaled-board {
+  width: calc(var(--board-base-width) * var(--board-scale));
+  margin-inline: auto;
+}
+.cell-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: none;
+  pointer-events: none;
+}
+.photo-definitions {
+  position: absolute;
+}
+.photo-toggle {
+  min-width: 84px;
+}
+.photo-grid .cell-photo {
+  display: block;
+}
+.photo-grid .cell input,
+.photo-grid .cell-marker,
+.photo-grid .cell.selected:after {
+  visibility: hidden;
+}
 .board-stage {
   position: relative;
-  width: min(100%, 760px, calc(100dvh - 244px));
+  width: 100%;
+  min-width: 0;
   margin: 0 auto;
 }
 .sudoku-grid {
@@ -278,6 +363,7 @@ svg {
 }
 .cell {
   position: relative;
+  container-type: inline-size;
   min-width: 0;
   min-height: 0;
   aspect-ratio: 1;
@@ -304,7 +390,8 @@ svg {
   background: transparent;
   outline: none;
   text-align: center;
-  font-size: 26px;
+  /* Size digits from the actual cell, also when a composite board is focused. */
+  font-size: 70cqw;
   line-height: 1;
   color: var(--accent);
   caret-color: var(--accent);
@@ -356,10 +443,6 @@ svg {
   border-radius: 50%;
   background: #ae770e;
   pointer-events: none;
-}
-.size-16 .cell input {
-  font-size: 19px;
-  letter-spacing: -0.6px;
 }
 .size-16 .cell-marker {
   width: 3px;
@@ -587,10 +670,37 @@ svg {
   height: 88px;
 }
 .cell-comparison {
+  --comparison-cell-size: clamp(56px, 16vw, 88px);
   display: flex;
   align-items: center;
   gap: 16px;
-  margin: 20px 0;
+  margin: 8px 0;
+}
+.editor-cell-samples {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+}
+.cell-comparison .cell-crop.large,
+.editor-current-value {
+  width: var(--comparison-cell-size);
+  height: var(--comparison-cell-size);
+  flex-shrink: 0;
+}
+.editor-current-value {
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #f5f7fc;
+  color: var(--text);
+  font-size: calc(var(--comparison-cell-size) * 0.62);
+  font-weight: 650;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.editor-cell-info {
+  min-width: 0;
 }
 .cell-comparison small {
   display: block;
@@ -602,10 +712,13 @@ svg {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
-  margin-top: 20px;
+  margin-top: 8px;
 }
 .number-pad.pad-16 {
   grid-template-columns: repeat(4, 1fr);
+}
+.number-pad-empty {
+  grid-column: 1 / -1;
 }
 .number-pad button {
   background: #f1f5fd;
@@ -617,25 +730,42 @@ svg {
 .number-pad button:hover {
   background: #dce7ff;
 }
+.number-pad button[aria-pressed='true'] {
+  background: var(--accent);
+  border-color: var(--accent-dark);
+  color: white;
+  font-weight: 750;
+  box-shadow: inset 0 0 0 2px var(--accent-dark);
+}
 .workspace.is-zoomed {
+  --board-panel-height: calc(100dvh - 40px);
   position: fixed;
   inset: 0;
   z-index: 45;
   width: 100%;
   max-width: none;
   overflow: auto;
+  overscroll-behavior: contain;
   background: #f5f7fb;
   padding: 20px;
 }
-.is-zoomed .board-stage {
-  width: min(100%, 900px, calc(100dvh - 160px));
+.is-zoomed .grid-viewport {
+  --board-base-width: min(100%, 900px, calc(100dvh - 160px));
 }
-.original-board {
-  width: 100%;
-  aspect-ratio: 1;
-  object-fit: contain;
+.check-action {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  column-gap: 12px;
+  margin-top: 8px;
+}
+.check-action > span {
+  color: var(--muted);
+  font-size: 16px;
+}
+.check-mode .solve-status > p {
   display: block;
-  background: white;
 }
 .error-message {
   font-size: 16px;
@@ -682,6 +812,62 @@ svg {
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
+}
+.dialog.cell-editor {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 16px;
+}
+.cell-editor > .dialog-heading,
+.cell-editor-footer {
+  flex-shrink: 0;
+}
+.cell-editor-body {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4px;
+  margin-inline: -4px;
+}
+.editor-cell-label {
+  overflow-wrap: anywhere;
+}
+.cell-editor-footer {
+  border-top: 1px solid var(--line);
+  margin-top: 8px;
+  padding-top: 8px;
+}
+.editor-progress {
+  font-size: 16px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.editor-navigation {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
+  gap: 8px;
+}
+.editor-navigation .button {
+  padding: 8px;
+  min-height: 48px;
+  font-size: 16px;
+}
+.editor-navigation svg {
+  flex-shrink: 0;
+}
+.editor-progress-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.editor-progress-row .button {
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 8px 12px;
+  font-size: 16px;
 }
 .dialog-heading {
   display: flex;
@@ -998,6 +1184,7 @@ select {
     padding: 0 16px;
   }
   .workspace {
+    --board-panel-height: calc(100dvh - var(--dock-height) - 80px);
     display: block;
     padding: 12px 16px calc(var(--dock-height) + 28px);
   }
@@ -1010,8 +1197,8 @@ select {
   .board-heading {
     margin-bottom: 10px;
   }
-  .board-stage {
-    width: min(100%, 680px, max(280px, calc(100dvh - var(--dock-height) - 148px)));
+  .grid-viewport {
+    --board-base-width: min(100%, 680px, max(280px, calc(100dvh - var(--dock-height) - 148px)));
   }
   .board-meta {
     font-size: 16px;
@@ -1069,12 +1256,6 @@ select {
   .keyboard-open .workspace {
     padding-bottom: 16px;
   }
-  .cell input {
-    font-size: 24px;
-  }
-  .size-16 .cell input {
-    font-size: clamp(12px, 3.7vw, 19px);
-  }
   .cell.selected:after {
     box-shadow: inset 0 0 0 1.5px var(--accent);
   }
@@ -1084,23 +1265,21 @@ select {
     margin-right: auto;
   }
   .workspace.is-zoomed {
+    --board-panel-height: calc(100dvh - var(--dock-height) - 24px);
     padding: 12px 12px calc(var(--dock-height) + 24px);
   }
-  .is-zoomed .board-scroll {
-    overflow: auto;
-  }
-  .is-zoomed .board-stage {
-    width: 620px;
-    min-width: 620px;
-  }
-  .is-zoomed .size-16 .cell input {
-    font-size: 23px;
+  .is-zoomed .grid-viewport {
+    --board-base-width: 620px;
   }
   .is-zoomed .workflow-dock {
     z-index: 46;
   }
 }
 @media (max-width: 600px) {
+  .site-header {
+    padding-inline: 12px;
+    gap: 8px;
+  }
   .header-actions {
     gap: 4px;
   }
@@ -1134,9 +1313,6 @@ select {
   }
   .board-tools .icon-button {
     padding: 6px;
-  }
-  .photo-toggle span {
-    display: none;
   }
   .board-meta {
     flex-wrap: wrap;
@@ -1187,6 +1363,56 @@ select {
     max-height: 40dvh;
   }
 }
+@media (max-height: 700px) {
+  .dialog.cell-editor {
+    padding: 12px;
+  }
+  .cell-editor .cell-comparison {
+    --comparison-cell-size: clamp(56px, 16vw, 72px);
+  }
+  .cell-editor .number-pad {
+    gap: 6px;
+  }
+  .cell-editor .number-pad button {
+    min-height: 44px;
+  }
+  .cell-editor .pad-16 {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+  .cell-editor .pad-16 .number-pad-empty {
+    grid-column: 2 / -1;
+  }
+}
+@media (max-height: 700px) and (max-width: 600px) {
+  .cell-editor .cell-comparison small {
+    display: none;
+  }
+}
+@media (max-height: 500px) and (min-width: 640px) {
+  .dialog.cell-editor {
+    width: 900px;
+    max-height: calc(100dvh - 20px);
+  }
+  .cell-editor-body,
+  .cell-editor-footer {
+    display: grid;
+    grid-template-columns: minmax(240px, 1fr) minmax(0, 1.3fr);
+    align-items: center;
+    gap: 12px;
+  }
+  .cell-editor .cell-comparison {
+    --comparison-cell-size: 56px;
+    gap: 12px;
+    margin: 0;
+  }
+  .cell-editor .cell-comparison small {
+    display: none;
+  }
+  .cell-editor .number-pad,
+  .editor-progress-row {
+    margin: 0;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   *,
   *:before,
@@ -1198,9 +1424,8 @@ select {
 }
 
 /* Linked puzzles keep the same canonical cells in the overview and focused board. */
-.has-composition .board-stage {
-  width: 100%;
-  min-width: 0;
+.has-composition .grid-viewport {
+  --board-base-width: 100%;
 }
 .has-composition .board-title {
   flex-direction: column;
@@ -1238,15 +1463,6 @@ select {
 .composite-grid .cell.guess {
   background-color: #fff4d9;
 }
-.composite-grid .cell input {
-  font-size: 20px;
-}
-.composition-scroll {
-  overflow: auto;
-  max-height: 72dvh;
-  overscroll-behavior: contain;
-  padding: 1px;
-}
 .composition-nav {
   display: flex;
   align-items: center;
@@ -1283,11 +1499,6 @@ select {
 .composition-controls select {
   max-width: 100%;
 }
-.composition-scale {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
 .next-uncertain {
   margin-bottom: 12px;
 }
@@ -1298,13 +1509,6 @@ select {
   .composition-map {
     height: 108px;
     flex-basis: 76px;
-  }
-  .composition-scroll {
-    max-height: none;
-  }
-  .is-zoomed .has-composition .board-stage {
-    width: 100%;
-    min-width: 0;
   }
 }
 

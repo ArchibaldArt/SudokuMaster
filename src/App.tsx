@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { version } from '../package.json'
 import {
   Camera,
   Check,
   CheckCircle2,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   CircleHelp,
   Download,
   Eraser,
@@ -27,7 +30,8 @@ import { CompositeBoard } from './components/CompositeBoard'
 import { cellLabel, emptyLayout, layouts, puzzleTitle } from './core/topology'
 import type { LayoutName } from './core/topology'
 import { compositeExample } from './data/composite'
-import { Board } from './components/Board'
+import { BoardViewport } from './components/BoardViewport'
+import { ScaleControls } from './components/ScaleControls'
 import { PhotoDialog } from './components/PhotoDialog'
 import { CameraDialog } from './components/CameraDialog'
 import { Dialog } from './components/Dialog'
@@ -53,6 +57,7 @@ export default function App() {
   const [uncertain, setUncertain] = useState<Set<number>>(new Set())
   const [view, setView] = useState<'grid' | 'photo'>('grid')
   const [zoom, setZoom] = useState(false)
+  const [scale, setScale] = useState(1)
   const [dragging, setDragging] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [error, setError] = useState('')
@@ -60,20 +65,26 @@ export default function App() {
   const menu = useRef<HTMLDetailsElement>(null)
   const fileInput = useRef<HTMLInputElement>(null)
   const solveButton = useRef<HTMLButtonElement>(null)
+  const editorBody = useRef<HTMLDivElement>(null)
   const solver = useSolver(puzzle)
   const validation = useMemo(() => validatePuzzle(puzzle), [puzzle])
   const conflicts = useMemo(() => new Set(validation.conflicts), [validation])
-  const locked = !['idle', 'error'].includes(solver.phase)
+  const checkOnly = solver.mode === 'check'
+  const locked = !['idle', 'error'].includes(solver.phase) && !(checkOnly && solver.phase === 'finished')
   const active = ['running', 'checking', 'paused', 'timeout'].includes(solver.phase)
   const values = solver.values ?? puzzle.givens
   const filled = values.filter(Boolean).length
   const ready = hasTask && puzzle.givens.some(Boolean) && validation.valid && (!review || confirmed)
+  const canCheck = hasTask && puzzle.givens.some(Boolean) && (!review || confirmed)
   const needsChecking = !!review && !confirmed
   const solved = solver.hasSolution
   useEffect(() => {
     if (confirmed) solveButton.current?.focus({ preventScroll: true })
   }, [confirmed])
-  const PuzzleBoard = puzzle.boards ? CompositeBoard : Board
+  useEffect(() => {
+    if (overlay === 'editor') editorBody.current?.scrollTo(0, 0)
+  }, [selected, overlay])
+  const PuzzleBoard = puzzle.boards ? CompositeBoard : BoardViewport
   const selectedCellLabel = selected === null ? '' : cellLabel(puzzle, selected)
   const selectedPreview = selected === null ? undefined : review?.cells[selected]?.previewUrl
   const selectedRect = selected !== null ? review?.cells[selected]?.rect : undefined
@@ -143,6 +154,7 @@ export default function App() {
     setSelected(0)
     setError('')
     setView('grid')
+    setScale(1)
   }
   const loadComposite = (layout: LayoutName) => {
     loadExample(9)
@@ -161,6 +173,7 @@ export default function App() {
     setUncertain(new Set())
     setSelected(0)
     setView('grid')
+    setScale(1)
     setError('')
   }
   const change = (index: number, value: number) => {
@@ -194,6 +207,7 @@ export default function App() {
     setFile(null)
     setSelected(result.cells.find((cell) => cell.needsReview)?.index ?? 0)
     setView('grid')
+    setScale(1)
   }
   const nextUncertain = () => {
     const remaining = [...uncertain].sort((a, b) => a - b)
@@ -204,6 +218,18 @@ export default function App() {
       setView('grid')
       setOverlay('editor')
     }
+  }
+  const confirmCell = (index: number) => {
+    setUncertain((previous) => {
+      const next = new Set(previous)
+      next.delete(index)
+      return next
+    })
+  }
+  const nextEditorCell = () => {
+    if (selected === null || locked || selected >= puzzle.givens.length - 1) return
+    confirmCell(selected)
+    selectCell(selected + 1)
   }
   const download = async () => {
     setExporting(true)
@@ -293,6 +319,27 @@ export default function App() {
     statusText = solver.reason
     tone = 'danger'
   }
+  if (checkOnly) {
+    if (solver.phase === 'running' || solver.phase === 'checking') {
+      statusTitle = 'Проверяем судоку'
+      statusText = 'Определяем, есть ли ровно одно решение.'
+    } else if (solver.phase === 'paused') {
+      statusTitle = 'Проверка на паузе'
+    } else if (solver.phase === 'timeout') {
+      statusTitle = 'Проверка не завершена'
+      statusText = 'Результат пока не установлен. Продолжите проверку ещё на 30 секунд.'
+    } else if (solver.phase === 'finished') {
+      const unique = solver.result?.status === 'unique'
+      const multiple = solver.result?.status === 'multiple'
+      statusTitle = unique ? 'Корректное судоку' : 'Некорректное судоку'
+      statusText = unique
+        ? 'У задачи ровно одно решение.'
+        : multiple
+          ? 'У задачи несколько решений.'
+          : 'У задачи нет решения.'
+      tone = unique ? 'success' : multiple ? 'warning' : 'danger'
+    }
+  }
 
   const phaseNumber = !hasTask ? '01' : needsChecking ? '02' : '03'
   return (
@@ -302,9 +349,14 @@ export default function App() {
           <span className="brand-mark">
             <Grid3X3 size={23} />
           </span>
-          <h1>
-            Sudoku<span>Master</span>
-          </h1>
+          <div className="brand-name">
+            <h1>
+              Sudoku<span>Master</span>
+            </h1>
+            <span className="app-version" aria-label={`Версия ${version}`}>
+              v{version}
+            </span>
+          </div>
         </div>
         <nav className="header-actions" aria-label="Инструменты">
           <button
@@ -384,7 +436,7 @@ export default function App() {
       />
       <main className={`workspace ${zoom ? 'is-zoomed' : ''}`} aria-label="Рабочий стол судоку">
         <section
-          className={`board-panel ${puzzle.boards ? 'has-composition' : ''} ${zoom ? 'zoomed-board' : ''} ${dragging ? 'dragging' : ''}`}
+          className={`board-panel ${hasTask ? 'has-task' : ''} ${puzzle.boards ? 'has-composition' : ''} ${zoom ? 'zoomed-board' : ''} ${dragging ? 'dragging' : ''}`}
           aria-label="Задача"
           onDragOver={(event) => {
             event.preventDefault()
@@ -427,25 +479,25 @@ export default function App() {
               </button>
             </div>
           </div>
+          {hasTask && <ScaleControls value={scale} onChange={setScale} />}
           <div className="board-scroll" id="sudoku-board-view">
             <div className="board-stage">
-              {view === 'photo' && review ? (
-                <img className="original-board" src={review.imageUrl} alt="Оригинал судоку для проверки" />
-              ) : (
-                <PuzzleBoard
-                  puzzle={puzzle}
-                  values={values}
-                  selected={selected}
-                  locked={locked || !hasTask}
-                  conflicts={conflicts}
-                  uncertain={uncertain}
-                  kinds={solver.kinds}
-                  latest={solver.latest}
-                  solved={solved}
-                  onSelect={selectCell}
-                  onChange={change}
-                />
-              )}
+              <PuzzleBoard
+                scale={scale}
+                photos={review?.photos}
+                showPhoto={view === 'photo' && !!review}
+                puzzle={puzzle}
+                values={values}
+                selected={selected}
+                locked={locked || !hasTask}
+                conflicts={conflicts}
+                uncertain={uncertain}
+                kinds={solver.kinds}
+                latest={solver.latest}
+                solved={solved}
+                onSelect={selectCell}
+                onChange={change}
+              />
               {!hasTask && (
                 <div className="empty-board-hint" aria-hidden="true">
                   <Camera size={28} />
@@ -470,7 +522,7 @@ export default function App() {
               </button>
             )}
           </div>
-          {inspecting && selected !== null && !locked && view === 'grid' && (
+          {inspecting && selected !== null && !locked && (
             <div className="cell-tools">
               {review && (
                 <div
@@ -489,10 +541,19 @@ export default function App() {
           )}
         </section>
         <aside className="workflow-dock" ref={dock}>
-          <section className={`solve-panel ${tone}`} aria-label="Проверка и решение">
+          <section
+            className={`solve-panel ${tone} ${checkOnly ? 'check-mode' : ''}`}
+            aria-label="Проверка и решение"
+          >
             <div className="step-label">
               <span>{phaseNumber}</span>
-              {!hasTask ? 'Фотография' : needsChecking ? 'Проверка чисел' : 'Решение'}
+              {!hasTask
+                ? 'Фотография'
+                : needsChecking
+                  ? 'Проверка чисел'
+                  : checkOnly
+                    ? 'Проверка судоку'
+                    : 'Решение'}
             </div>
             <div className="solve-status" role="status" aria-live="polite" aria-atomic="true">
               <div className="status-title">
@@ -558,7 +619,7 @@ export default function App() {
                       }}
                     >
                       <Play size={19} fill="currentColor" />
-                      {solver.phase === 'finished' ? 'Запустить ещё раз' : 'Решить судоку'}
+                      {solver.phase === 'finished' && !checkOnly ? 'Запустить ещё раз' : 'Решить судоку'}
                     </button>
                   )}
                   {['running', 'checking'].includes(solver.phase) && (
@@ -598,6 +659,23 @@ export default function App() {
                 </>
               )}
             </div>
+            {hasTask && !active && !solved && (
+              <div className="check-action">
+                <button
+                  className="text-button"
+                  disabled={!canCheck}
+                  aria-describedby="check-action-help"
+                  onClick={() => {
+                    setInspecting(false)
+                    solver.start('check')
+                  }}
+                >
+                  <ShieldCheck size={18} />
+                  Проверить судоку
+                </button>
+                <span id="check-action-help">Без показа решения</span>
+              </div>
+            )}
             {hasTask && (
               <div className="workflow-secondary">
                 {!active && locked ? (
@@ -727,52 +805,88 @@ export default function App() {
         </Dialog>
       )}
       {overlay === 'editor' && selected !== null && (
-        <Dialog title="Правка клетки" onClose={() => setOverlay(null)}>
-          <div className="cell-comparison">
-            {review && (
-              <div
-                className="cell-crop large"
-                role="img"
-                aria-label="Фрагмент выбранной клетки на фотографии"
-                style={cropStyle}
-              />
-            )}
-            <p>
-              {selectedCellLabel}
-              {review && <small>Сверьте число с фотографией</small>}
-            </p>
-          </div>
-          <div className={`number-pad pad-${puzzle.size}`}>
-            {Array.from({ length: puzzle.size }, (_, i) => (
+        <Dialog title="Правка клетки" className="cell-editor" onClose={() => setOverlay(null)}>
+          <div className="cell-editor-body" ref={editorBody}>
+            <div className="cell-comparison">
+              <div className="editor-cell-samples">
+                {review && (
+                  <div
+                    className="cell-crop large"
+                    role="img"
+                    aria-label="Фрагмент выбранной клетки на фотографии"
+                    style={cropStyle}
+                  />
+                )}
+                <div
+                  className="editor-current-value"
+                  role="img"
+                  aria-label={values[selected] ? `Число в поле: ${values[selected]}` : 'Клетка в поле пустая'}
+                >
+                  {values[selected] || ''}
+                </div>
+              </div>
+              <div className="editor-cell-info">
+                <p className="editor-cell-label">{selectedCellLabel}</p>
+                {review && <small>Сверьте число с фотографией</small>}
+              </div>
+            </div>
+            <div className={`number-pad pad-${puzzle.size}`} role="group" aria-label="Число в клетке">
+              {Array.from({ length: puzzle.size }, (_, i) => (
+                <button
+                  key={i}
+                  disabled={locked}
+                  onClick={() => change(selected, i + 1)}
+                  aria-label={`Ввести ${i + 1}`}
+                  aria-pressed={values[selected] === i + 1}
+                >
+                  {i + 1}
+                </button>
+              ))}
               <button
-                key={i}
+                className="number-pad-empty"
                 disabled={locked}
-                onClick={() => change(selected, i + 1)}
-                aria-label={`Ввести ${i + 1}`}
+                onClick={() => change(selected, 0)}
+                aria-pressed={values[selected] === 0}
               >
-                {i + 1}
+                Пусто
               </button>
-            ))}
+            </div>
           </div>
-          <div className="dialog-actions">
-            <button className="button secondary" disabled={locked} onClick={() => change(selected, 0)}>
-              <Eraser size={18} />
-              Стереть число
-            </button>
-            <button
-              className="button primary"
-              onClick={() => {
-                setUncertain((previous) => {
-                  const next = new Set(previous)
-                  next.delete(selected)
-                  return next
-                })
-                setOverlay(null)
-              }}
-            >
-              <Check size={19} />
-              Готово
-            </button>
+          <div className="cell-editor-footer">
+            <div className="editor-progress-row">
+              <p className="editor-progress" role="status" aria-live="polite" aria-atomic="true">
+                Клетка {selected + 1} из {puzzle.givens.length}
+              </p>
+              <button
+                className={`button ${selected === puzzle.givens.length - 1 ? 'primary' : 'secondary'}`}
+                onClick={() => {
+                  confirmCell(selected)
+                  setOverlay(null)
+                }}
+              >
+                <Check size={19} />
+                Готово
+              </button>
+            </div>
+            <nav className="editor-navigation" aria-label="Проверка клеток по порядку">
+              <button
+                className="button secondary"
+                disabled={selected === 0 || locked}
+                aria-label="Предыдущая клетка"
+                onClick={() => selectCell(selected - 1)}
+              >
+                <ChevronLeft size={19} />
+                Назад
+              </button>
+              <button
+                className="button primary"
+                disabled={selected === puzzle.givens.length - 1 || locked}
+                onClick={nextEditorCell}
+              >
+                Проверено, дальше
+                <ChevronRight size={19} />
+              </button>
+            </nav>
           </div>
         </Dialog>
       )}
@@ -785,6 +899,11 @@ export default function App() {
               <li>Проверьте найденные поля и их пересечения, затем распознайте числа.</li>
               <li>Сверьте числа с оригиналом, подтвердите проверку и запустите решение.</li>
             </ol>
+            <h3>Проверка без решения</h3>
+            <p>
+              «Проверить судоку» показывает только статус: одно решение, несколько решений или ни одного.
+              Исходные клетки остаются незаполненными. Чтобы увидеть ответ, отдельно нажмите «Решить судоку».
+            </p>
             <h3>Что можно решать</h3>
             <p>
               Классические судоку 9×9 и 16×16, а также связанные поля 9×9 с общими блоками 3×3: два поля,
@@ -795,7 +914,14 @@ export default function App() {
             <p>
               Нажмите на клетку, чтобы изменить число. «Правка» открывает фрагмент фотографии и цифровые
               кнопки. Стрелки перемещают выделение, Backspace и Delete очищают ввод. Большое поле можно
-              увеличить.
+              увеличить или уменьшить от 25% до 200%. «Фото / Поле» сохраняет масштаб, прокрутку и выбранное
+              поле, чтобы числа было удобно сравнивать.
+            </p>
+            <p>
+              В окне правки текущее число выделено синим. «Пусто» в том же блоке очищает клетку. «Проверено,
+              дальше» подтверждает клетку и переходит к следующей по строкам, включая пустые. «Назад»
+              возвращает к предыдущей клетке. Общие клетки составных полей проверяются один раз. Изменения
+              сохраняются сразу; «Готово» подтверждает текущую клетку и закрывает окно.
             </p>
             <h3>Рукописные заметки</h3>
             <p>

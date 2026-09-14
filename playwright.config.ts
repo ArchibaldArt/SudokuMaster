@@ -20,11 +20,16 @@ export default defineConfig({
       use: { ...devices['iPhone 13'], defaultBrowserType: 'chromium' },
       testMatch: /mobile\.spec\.ts/,
     },
-    { name: 'firefox', use: { ...devices['Desktop Firefox'] }, testMatch: /(?:app|camera)\.spec\.ts/ },
+    {
+      name: 'firefox',
+      use: { ...devices['Desktop Firefox'] },
+      testMatch: /(?:app|camera|validation)\.spec\.ts/,
+    },
     {
       name: 'webkit',
       use: { ...devices['iPhone 13'] },
-      testMatch: /(?:mobile|photo|camera|design|composite|recognition-modes|web-photos)\.spec\.ts/,
+      testMatch:
+        /(?:mobile|photo|camera|design|composite|recognition-modes|web-photos|validation|photo-alignment|zoom|cell-editor|grid-curvature|printed-filter)\.spec\.ts/,
     },
   ],
   webServer: {

@@ -1,5 +1,7 @@
 /* OpenCV runs in a classic worker so its WASM loader never blocks the page. */
 importScripts(new URL('./composition-vision.js', self.location.href).href)
+importScripts(new URL('./grid-geometry.js?v=blocks-1', self.location.href).href)
+importScripts(new URL('./printed-filter.js?v=print-2', self.location.href).href)
 let ready
 function getCV() {
   if (!ready)
@@ -41,14 +43,23 @@ function threshold(cv, src, offset = 12, block = 31) {
   }
 }
 
-function warp(cv, src, corners, side, height = side) {
+function warp(cv, src, corners, side, height = side, padding = 0) {
   const from = cv.matFromArray(
     4,
     1,
     cv.CV_32FC2,
     corners.flatMap((p) => [p.x, p.y]),
   )
-  const to = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, side - 1, 0, side - 1, height - 1, 0, height - 1])
+  const to = cv.matFromArray(4, 1, cv.CV_32FC2, [
+    padding,
+    padding,
+    side - 1 + padding,
+    padding,
+    side - 1 + padding,
+    height - 1 + padding,
+    padding,
+    height - 1 + padding,
+  ])
   const matrix = cv.getPerspectiveTransform(from, to)
   const dst = new cv.Mat()
   try {
@@ -56,7 +67,7 @@ function warp(cv, src, corners, side, height = side) {
       src,
       dst,
       matrix,
-      new cv.Size(side, height),
+      new cv.Size(side + padding * 2, height + padding * 2),
       cv.INTER_LINEAR,
       cv.BORDER_CONSTANT,
       new cv.Scalar(255, 255, 255, 255),
@@ -205,7 +216,7 @@ function boundaries(peaks, size, side) {
   })
 }
 
-function prepare(cv, src, corners, size, mode = 'all') {
+function prepare(cv, src, corners, size, mode = 'all', boxSize = Math.sqrt(size)) {
   const printedOnly = mode === 'printed'
   const side = size === 16 ? 1536 : 1080
   const sourcePitch =
@@ -213,7 +224,17 @@ function prepare(cv, src, corners, size, mode = 'all') {
       Math.hypot(corners[3].x - corners[0].x, corners[3].y - corners[0].y)) /
     (2 * size)
   const smallPrint = sourcePitch < 45
-  const rectified = warp(cv, src, corners, side)
+  // Keep a margin: on a bowed page even the outer borders may lie outside the
+  // quadrilateral joining their four corners.
+  const padding = Math.round((side / size) * 0.6)
+  const projected = warp(cv, src, corners, side, side, padding)
+  let local
+  try {
+    local = rectifyLocalGrid(cv, projected, side, padding, size, boxSize)
+  } finally {
+    projected.delete()
+  }
+  const { image: rectified, xs, ys, geometry } = local
   const cleaned = new cv.Mat()
   rectified.copyTo(cleaned)
   let binary
@@ -222,6 +243,7 @@ function prepare(cv, src, corners, size, mode = 'all') {
     // under yellow room lighting and can erase the dark parts of printed digits.
     const cellSide = side / size
     const inkHistogram = new Uint32Array(256)
+    const colouredInk = printedOnly ? new Uint8Array(side * side) : null
     let inkSamples = 0
     for (let row = 0; row < size; row++)
       for (let col = 0; col < size; col++) {
@@ -254,14 +276,13 @@ function prepare(cv, src, corners, size, mode = 'all') {
             const blue = b - r > 0.055 && Math.max(r, g, b) > 0.25
             const red = r > 0.4 && r - Math.max(g, b) > 0.18
             const coloured = blue || red
+            if (colouredInk && coloured) colouredInk[p / 4] = 1
             // Coloured printed digits are valid input in the default mode. The
             // darkest normalized channel retains their contrast against the paper.
             const gray = printedOnly
-              ? coloured
-                ? 255
-                : Math.min(255, Math.round(((r + g + b) / 3) * 255))
+              ? Math.min(255, Math.round(((r + g + b) / 3) * 255))
               : Math.min(255, Math.round(Math.min(r, g, b) * 255))
-            if (gray < 190) {
+            if (gray < 190 && (!printedOnly || !coloured)) {
               inkHistogram[gray]++
               inkSamples++
             }
@@ -270,6 +291,7 @@ function prepare(cv, src, corners, size, mode = 'all') {
             cleaned.data[p + 2] = gray
           }
       }
+    if (printedOnly) preserveBlackPrint(cv, cleaned, colouredInk, xs, ys, size)
     let inkReference = 0,
       cumulative = 0
     for (let i = 0; i < 190; i++) {
@@ -288,14 +310,6 @@ function prepare(cv, src, corners, size, mode = 'all') {
       if (printedOnly) cv.morphologyEx(binary, binary, cv.MORPH_OPEN, inkKernel)
     } finally {
       inkKernel.delete()
-    }
-    const gridMask = threshold(cv, rectified)
-    let xs, ys
-    try {
-      xs = boundaries(lines(cv, gridMask, true), size, side)
-      ys = boundaries(lines(cv, gridMask, false), size, side)
-    } finally {
-      gridMask.delete()
     }
     const cells = []
     for (let row = 0; row < size; row++)
@@ -335,14 +349,27 @@ function prepare(cv, src, corners, size, mode = 'all') {
           cv.distanceTransform(roi, distance, cv.DIST_L2, 3)
           const thickness = new Float32Array(count)
           const tones = new Float64Array(count)
+          const interiorInk = new Uint32Array(count)
           for (let p = 0; p < labels.data32S.length; p++) {
             const label = labels.data32S[p]
             thickness[label] = Math.max(thickness[label], distance.data32F[p])
             if (label) tones[label] += cleaned.data[((y + Math.floor(p / w)) * side + x + (p % w)) * 4] / 255
+            if (
+              printedOnly &&
+              label &&
+              p % w >= w * 0.08 &&
+              p % w < w * 0.92 &&
+              Math.floor(p / w) >= h * 0.08 &&
+              Math.floor(p / w) < h * 0.92
+            )
+              interiorInk[label]++
           }
           const keep = new Set()
           let ink = 0,
             allInk = 0,
+            reviewTop = h,
+            reviewBottom = 0,
+            reviewStroke = 0,
             minX = w,
             minY = h,
             maxX = 0,
@@ -354,6 +381,26 @@ function prepare(cv, src, corners, size, mode = 'all') {
               ch = stats.intAt(n, cv.CC_STAT_HEIGHT)
             const area = stats.intAt(n, cv.CC_STAT_AREA)
             allInk += area
+            if (printedOnly) {
+              if (
+                interiorInk[n] < w * h * 0.008 &&
+                (interiorInk[n] === 0 || printedGridFragment(left, top, cw, ch, w, h))
+              )
+                continue
+              // Only substantial, nearly black content is evidence of a missed
+              // printed number. Ignore frame remnants, tiny notes and paper grain.
+              if (
+                ch >= h * 0.12 &&
+                area >= w * h * 0.008 &&
+                thickness[n] >= Math.max(1.5, ch * 0.035) &&
+                (tones[n] / area <= inkToneLimit + 0.06 ||
+                  (ch >= h * 0.38 && thickness[n] >= h * 0.04 && tones[n] / area <= 0.65))
+              ) {
+                reviewTop = Math.min(reviewTop, top)
+                reviewBottom = Math.max(reviewBottom, top + ch)
+                reviewStroke = Math.max(reviewStroke, thickness[n] / h)
+              }
+            }
             if (
               ch < h * (printedOnly ? 0.3 : 0.23) ||
               area < w * h * (printedOnly ? 0.015 : 0.008) ||
@@ -374,7 +421,15 @@ function prepare(cv, src, corners, size, mode = 'all') {
             maxY = Math.max(maxY, top + ch)
           }
           if (!keep.size) {
-            cells.push({ index, rect: { x, y, w, h }, empty: true, ambiguous: allInk > w * h * 0.035 })
+            const reviewHeight = Math.max(0, reviewBottom - reviewTop) / h
+            cells.push({
+              index,
+              rect: { x, y, w, h },
+              empty: true,
+              reviewHeight,
+              reviewStroke,
+              ambiguous: printedOnly ? reviewHeight >= 0.3 : allInk > w * h * 0.035,
+            })
             continue
           }
           for (let p = 0; p < labels.data32S.length; p++) if (keep.has(labels.data32S[p])) glyph.data[p] = 255
@@ -438,6 +493,9 @@ function prepare(cv, src, corners, size, mode = 'all') {
               rect: { x, y, w, h },
               empty: false,
               relativeHeight: (maxY - minY) / h,
+              relativeStroke: Math.max(...[...keep].map((label) => thickness[label])) / h,
+              reviewHeight: Math.max(0, reviewBottom - reviewTop) / h,
+              reviewStroke,
               meanTone: [...keep].reduce((sum, label) => sum + tones[label], 0) / ink,
               digitHint,
               width: padded.cols,
@@ -476,28 +534,30 @@ function prepare(cv, src, corners, size, mode = 'all') {
         }
       }
     }
-    if (printedOnly) {
-      // On a partly filled page, printed digits share a stable font size while
-      // handwritten additions are often smaller. Estimate that size per board,
-      // using the upper quartile so numerous small notes cannot dominate it.
-      const heights = cells
-        .filter((c) => !c.empty)
-        .map((c) => c.relativeHeight)
-        .sort((a, b) => a - b)
-      if (heights.length >= size * size * 0.65) {
-        const minimum = heights[Math.floor(heights.length * 0.75)] * 0.88
-        for (let i = 0; i < cells.length; i++) {
-          const cell = cells[i]
-          if (!cell.empty && cell.relativeHeight < minimum)
-            cells[i] = { index: cell.index, rect: cell.rect, empty: true, ambiguous: true }
-        }
-      }
-    }
+    if (printedOnly) filterPrintedCells(cells, size)
     for (const cell of cells) {
+      if (geometry.uncertain) cell.ambiguous = true
+      if (geometry.corrected) {
+        const row = Math.floor(cell.index / size),
+          col = cell.index % size
+        const block =
+          geometry.blocks[Math.floor(row / boxSize) * (size / boxSize) + Math.floor(col / boxSize)]
+        if (block.confidence < 0.55) cell.ambiguous = true
+      }
       delete cell.relativeHeight
       delete cell.meanTone
+      delete cell.reviewHeight
+      delete cell.relativeStroke
+      delete cell.reviewStroke
     }
-    return { width: side, height: side, data: new Uint8ClampedArray(rectified.data), cells }
+    // Full cell bounds are separate from the inset OCR crops. They align the
+    // original photograph with the editable grid without trimming the digits.
+    const rects = cells.map((cell) => {
+      const col = cell.index % size,
+        row = Math.floor(cell.index / size)
+      return { x: xs[col], y: ys[row], w: xs[col + 1] - xs[col], h: ys[row + 1] - ys[row] }
+    })
+    return { width: side, height: side, data: new Uint8ClampedArray(rectified.data), cells, rects, geometry }
   } finally {
     rectified.delete()
     cleaned.delete()
@@ -513,7 +573,7 @@ self.onmessage = async ({ data: message }) => {
     const result =
       message.type === 'detect'
         ? detect(cv, src)
-        : prepare(cv, src, message.corners, message.size, message.mode)
+        : prepare(cv, src, message.corners, message.size, message.mode, message.boxSize)
     const transfer = []
     if (result.data) transfer.push(result.data.buffer)
     if (result.cells) for (const cell of result.cells) if (cell.data) transfer.push(cell.data.buffer)

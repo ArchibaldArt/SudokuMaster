@@ -1,14 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Board } from './Board'
-import type { BoardProps } from './Board'
+import { BoardViewport } from './BoardViewport'
+import type { BoardViewportProps } from './BoardViewport'
 import { topology } from '../core/topology'
 
-export function CompositeBoard(props: BoardProps) {
+export function CompositeBoard(props: BoardViewportProps) {
   const geometry = useMemo(() => topology(props.puzzle), [props.puzzle])
   const [focus, setFocus] = useState<number | null>(() =>
     window.matchMedia('(max-width: 900px)').matches ? 0 : null,
   )
-  const [scale, setScale] = useState(1)
   useEffect(() => {
     if (props.selected !== null && focus !== null && !geometry.boards[focus]?.cells.includes(props.selected))
       setFocus(geometry.cells[props.selected]?.boards[0] ?? 0)
@@ -83,46 +82,14 @@ export function CompositeBoard(props: BoardProps) {
               ))}
             </select>
           </label>
-          {focus !== null ? (
+          {focus !== null && (
             <button className="text-button" onClick={() => choose(null)}>
               Вся задача
             </button>
-          ) : (
-            <div className="composition-scale">
-              <button
-                className="button secondary small"
-                aria-label="Уменьшить составную схему"
-                disabled={scale <= 1}
-                onClick={() => setScale((s) => Math.max(1, s - 0.25))}
-              >
-                −
-              </button>
-              <span>{Math.round(scale * 100)}%</span>
-              <button
-                className="button secondary small"
-                aria-label="Увеличить составную схему"
-                disabled={scale >= 2}
-                onClick={() => setScale((s) => Math.min(2, s + 0.25))}
-              >
-                +
-              </button>
-            </div>
           )}
         </div>
       </nav>
-      <div
-        className="composition-scroll"
-        tabIndex={focus === null ? 0 : undefined}
-        aria-label="Область полей"
-      >
-        <div
-          style={
-            focus === null ? { width: `${scale * 100}%`, minWidth: geometry.width * 30 * scale } : undefined
-          }
-        >
-          <Board {...props} focusBoard={focus} />
-        </div>
-      </div>
+      <BoardViewport {...props} focusBoard={focus} />
     </div>
   )
 }

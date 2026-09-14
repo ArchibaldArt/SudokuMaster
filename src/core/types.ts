@@ -1,5 +1,6 @@
 export type BoardSize = 9 | 16
 export type RecognitionMode = 'all' | 'printed'
+export type SolveMode = 'solve' | 'check'
 export interface GridPlacement {
   x: number
   y: number
@@ -46,9 +47,18 @@ export interface RecognitionResult {
   cells: CellRecognition[]
   imageUrl: string
   imageSize: { width: number; height: number }
+  /** Unfiltered, rectified photos with full cell boundaries, one per board. */
+  photos: {
+    imageUrl: string
+    width: number
+    height: number
+    rects: CellRecognition['rect'][]
+  }[]
 }
 export type WorkerRequest =
-  { type: 'start'; puzzle: PuzzleDefinition } | { type: 'advance'; count: number } | { type: 'continue' }
+  | { type: 'start'; puzzle: PuzzleDefinition; mode?: SolveMode }
+  | { type: 'advance'; count: number }
+  | { type: 'continue' }
 export interface WorkerReply {
   type: 'ready' | 'batch' | 'timeout' | 'error'
   events?: SolverEvent[]

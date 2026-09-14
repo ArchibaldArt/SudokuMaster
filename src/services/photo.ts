@@ -36,6 +36,7 @@ interface Prepared {
   height: number
   data: Uint8ClampedArray
   cells: PreparedCell[]
+  rects: CellRecognition['rect'][]
 }
 export interface PhotoProgress {
   fraction: number
@@ -125,7 +126,8 @@ export class PhotoProcessor {
   private request<T>(type: string, source: PhotoSource, args: object = {}): Promise<T> {
     this.check()
     if (!this.vision) {
-      this.vision = new Worker(localAsset('vision.worker.js'))
+      // Refresh the worker when its geometry or recognition filters change.
+      this.vision = new Worker(localAsset('vision.worker.js?v=printed-glyphs-1'))
       this.vision.onmessage = ({ data }) => {
         const promise = this.pending.get(data.id)
         if (data.error)
@@ -221,6 +223,7 @@ export class PhotoProcessor {
         },
       })
       const cells = new Array<CellRecognition>(geometry.cells.length)
+      const photos: RecognitionResult['photos'] = []
       let url = source.url,
         width = source.image.width,
         height = source.image.height
@@ -234,6 +237,7 @@ export class PhotoProcessor {
         const prepared = await this.request<Prepared>('prepare', source, {
           corners: plans[b].corners,
           size: puzzle.size,
+          boxSize: puzzle.boxSize,
           mode,
         })
         this.check()
@@ -247,8 +251,15 @@ export class PhotoProcessor {
             0,
             0,
           )
+        const rectifiedUrl = original.toDataURL('image/jpeg', 0.91)
+        photos.push({
+          imageUrl: rectifiedUrl,
+          width: prepared.width,
+          height: prepared.height,
+          rects: prepared.rects,
+        })
         if (!boards) {
-          url = original.toDataURL('image/jpeg', 0.91)
+          url = rectifiedUrl
           width = prepared.width
           height = prepared.height
         }
@@ -317,7 +328,7 @@ export class PhotoProcessor {
         }
       }
       puzzle.givens = cells.map((c) => c.value)
-      return { puzzle, cells, imageUrl: url, imageSize: { width, height } }
+      return { puzzle, cells, imageUrl: url, imageSize: { width, height }, photos }
     } finally {
       this.ocr?.terminate()
       this.ocr = null
