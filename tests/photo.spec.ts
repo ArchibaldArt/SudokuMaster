@@ -28,7 +28,7 @@ for (const size of [9, 16] as const)
     expect(recognized).toEqual(givens)
     const actions = page.getByRole('region', { name: 'Проверка и решение', exact: true })
     const confirm = actions.getByRole('button', { name: 'Я проверил(а) числа по фотографии', exact: true })
-    const solve = actions.getByRole('button', { name: 'Решить судоку', exact: true })
+    const solve = actions.getByRole('button', { name: 'Решить судоку', exact: true, includeHidden: true })
     await expect(actions.getByText('Сначала проверим числа', { exact: true })).toBeVisible()
     await expect(page.getByRole('checkbox')).toHaveCount(0)
     await expect(actions.getByRole('status').getByRole('button')).toHaveCount(0)
@@ -45,10 +45,12 @@ for (const size of [9, 16] as const)
     }
     await actions.scrollIntoViewIfNeeded()
     const confirmBox = (await confirm.boundingBox())!
-    const solveBox = (await solve.boundingBox())!
     expect(confirmBox.height).toBeGreaterThanOrEqual(48)
-    expect(solveBox.height).toBeGreaterThanOrEqual(48)
-    expect(solveBox.y).toBeGreaterThan(confirmBox.y + confirmBox.height)
+    if (page.viewportSize()!.width >= 1024) {
+      const solveBox = (await solve.boundingBox())!
+      expect(solveBox.height).toBeGreaterThanOrEqual(48)
+      expect(solveBox.y).toBeGreaterThan(confirmBox.y + confirmBox.height)
+    } else await expect(solve).toBeHidden()
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
     await actions.screenshot({ path: `test-results/${testInfo.project.name}-review-${size}.png` })
     if (size === 16) {
@@ -70,7 +72,7 @@ for (const size of [9, 16] as const)
         .evaluateAll((inputs) => inputs.map((input) => Number((input as HTMLInputElement).value))),
     ).toEqual(givens)
     await actions.screenshot({ path: `test-results/${testInfo.project.name}-confirmed-${size}.png` })
-    await page.getByRole('button', { name: 'Решить судоку', exact: true }).click()
+    await page.getByRole('button', { name: 'Решить судоку', exact: true, includeHidden: true }).click()
     await expect(page.getByText('Судоку решено!', { exact: true })).toBeVisible()
     expect(errors).toEqual([])
     expect(external).toEqual([])
@@ -180,7 +182,7 @@ test('recognizes the annotated magazine photograph and permits correcting every 
   }
   await page.getByRole('button', { name: 'Я проверил(а) числа по фотографии', exact: true }).click()
   await expect(page.locator('.cell.uncertain')).toHaveCount(0)
-  await page.getByRole('button', { name: 'Решить судоку', exact: true }).click()
+  await page.getByRole('button', { name: 'Решить судоку', exact: true, includeHidden: true }).click()
   await expect(page.getByText('Судоку решено!', { exact: true })).toBeVisible()
 })
 
@@ -198,7 +200,7 @@ test('requires fresh confirmation after edits and another photograph, and blocks
   await upload()
   const actions = page.getByRole('region', { name: 'Проверка и решение', exact: true })
   const confirm = actions.getByRole('button', { name: 'Я проверил(а) числа по фотографии', exact: true })
-  const solve = actions.getByRole('button', { name: 'Решить судоку', exact: true })
+  const solve = actions.getByRole('button', { name: 'Решить судоку', exact: true, includeHidden: true })
   await confirm.click()
   await expect(solve).toBeEnabled()
 
@@ -256,7 +258,10 @@ test('handles an OCR model loading failure and keeps manual entry available', as
   await menuAction(page, 'Ввести вручную')
   await expect(page.getByLabel('Строка 1, столбец 3', { exact: true })).toBeEditable()
   await page.getByLabel('Строка 1, столбец 3', { exact: true }).fill('3')
-  await expect(page.getByRole('button', { name: 'Решить судоку', exact: true })).toBeEnabled()
+  await page.getByRole('button', { name: 'Я заполнил числа', exact: true }).click()
+  await expect(
+    page.getByRole('button', { name: 'Решить судоку', exact: true, includeHidden: true }),
+  ).toBeEnabled()
 })
 
 test('corrects a rotated photograph before recognition', async ({ page }) => {

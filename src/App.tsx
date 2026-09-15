@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { version } from '../package.json'
 import {
   AlertTriangle,
@@ -14,6 +14,7 @@ import {
   FileImage,
   Grid3X3,
   LoaderCircle,
+  ListChecks,
   Maximize2,
   MoreHorizontal,
   Pause,
@@ -68,6 +69,8 @@ export default function App() {
   const fileInput = useRef<HTMLInputElement>(null)
   const solveButton = useRef<HTMLButtonElement>(null)
   const editorBody = useRef<HTMLDivElement>(null)
+  const boardView = useRef<HTMLDivElement>(null)
+  const photoScroll = useRef<{ element: HTMLElement; left: number; top: number } | null>(null)
   const solver = useSolver(puzzle)
   const validation = useMemo(() => validatePuzzle(puzzle), [puzzle])
   const conflicts = useMemo(() => new Set(validation.conflicts), [validation])
@@ -88,6 +91,17 @@ export default function App() {
   useEffect(() => {
     if (overlay === 'editor') editorBody.current?.scrollTo(0, 0)
   }, [selected, overlay])
+  useLayoutEffect(() => {
+    // Safari can adjust the scroll offset when the focused grid's inputs become visible.
+    const saved = photoScroll.current
+    if (saved) saved.element.scrollTo(saved.left, saved.top)
+    photoScroll.current = null
+  }, [view])
+  const togglePhoto = () => {
+    const element = boardView.current?.querySelector<HTMLElement>('.grid-viewport')
+    if (element) photoScroll.current = { element, left: element.scrollLeft, top: element.scrollTop }
+    setView(view === 'photo' ? 'grid' : 'photo')
+  }
   const PuzzleBoard = puzzle.boards ? CompositeBoard : BoardViewport
   const selectedCellLabel = selected === null ? '' : cellLabel(puzzle, selected)
   const selectedPreview = selected === null ? undefined : review?.cells[selected]?.previewUrl
@@ -428,6 +442,19 @@ export default function App() {
                   Очистить поле
                 </button>
               )}
+              {hasTask && !active && locked && (
+                <button
+                  className="mobile-action"
+                  onClick={() => {
+                    closeMenu()
+                    solver.reset()
+                  }}
+                  aria-label="Вернуться к исходной задаче"
+                >
+                  <RotateCcw size={18} />
+                  Изменить задачу
+                </button>
+              )}
               <span className="menu-label">Примеры</span>
               <button onClick={() => loadExample(9)}>
                 9 × 9 <span>Классика</span>
@@ -478,35 +505,37 @@ export default function App() {
             acceptFile(event.dataTransfer.files[0])
           }}
         >
-          <div className="board-heading">
-            <div className="board-title">
-              <h2>{puzzleTitle(puzzle)}</h2>
-              <span title={name}>{name}</span>
-            </div>
-            <div className="board-tools">
-              {review && (
+          <div className="board-toolbar">
+            <div className="board-heading">
+              <div className="board-title">
+                <h2>{puzzleTitle(puzzle)}</h2>
+                <span title={name}>{name}</span>
+              </div>
+              <div className="board-tools">
+                {review && (
+                  <button
+                    className="icon-button photo-toggle"
+                    aria-label={view === 'photo' ? 'Вернуться к полю' : 'Показать фото'}
+                    aria-pressed={view === 'photo'}
+                    aria-controls="sudoku-board-view"
+                    onClick={togglePhoto}
+                  >
+                    {view === 'photo' ? <Grid3X3 size={20} /> : <FileImage size={20} />}
+                    <span>{view === 'photo' ? 'Поле' : 'Фото'}</span>
+                  </button>
+                )}
                 <button
-                  className="icon-button photo-toggle"
-                  aria-label={view === 'photo' ? 'Вернуться к полю' : 'Показать фото'}
-                  aria-pressed={view === 'photo'}
-                  aria-controls="sudoku-board-view"
-                  onClick={() => setView(view === 'photo' ? 'grid' : 'photo')}
+                  className="icon-button"
+                  onClick={() => setZoom(!zoom)}
+                  aria-label={zoom ? 'Уменьшить поле' : 'Увеличить поле'}
                 >
-                  {view === 'photo' ? <Grid3X3 size={20} /> : <FileImage size={20} />}
-                  <span>{view === 'photo' ? 'Поле' : 'Фото'}</span>
+                  {zoom ? <X size={21} /> : <Maximize2 size={20} />}
                 </button>
-              )}
-              <button
-                className="icon-button"
-                onClick={() => setZoom(!zoom)}
-                aria-label={zoom ? 'Уменьшить поле' : 'Увеличить поле'}
-              >
-                {zoom ? <X size={21} /> : <Maximize2 size={20} />}
-              </button>
+              </div>
             </div>
+            {hasTask && <ScaleControls value={scale} onChange={setScale} />}
           </div>
-          {hasTask && <ScaleControls value={scale} onChange={setScale} />}
-          <div className="board-scroll" id="sudoku-board-view">
+          <div className="board-scroll" id="sudoku-board-view" ref={boardView}>
             <div className="board-stage">
               <PuzzleBoard
                 scale={scale}
@@ -540,6 +569,7 @@ export default function App() {
           </div>
           <div className="board-meta">
             <span>
+              {hasTask && <span className="compact-label">{puzzleTitle(puzzle)} · </span>}
               {hasTask ? `${filled} / ${puzzle.givens.length} клеток` : 'Судоку 9×9, 16×16 и связанные поля'}
             </span>
             {hasTask && (
@@ -568,7 +598,7 @@ export default function App() {
         </section>
         <aside className="workflow-dock" ref={dock}>
           <section
-            className={`solve-panel ${tone} ${checkOnly ? 'check-mode' : ''}`}
+            className={`solve-panel ${tone} ${checkOnly ? 'check-mode' : ''} ${!hasTask ? 'is-empty' : ''} ${needsChecking && uncertain.size ? 'has-review-cells' : ''}`}
             aria-label="Проверка и решение"
           >
             <div className="step-label">
@@ -605,8 +635,17 @@ export default function App() {
               )}
             </div>
             {needsChecking && uncertain.size > 0 && (
-              <button className="text-button next-uncertain" onClick={nextUncertain}>
-                Следующая сомнительная клетка
+              <button
+                className="text-button next-uncertain"
+                onClick={nextUncertain}
+                aria-label={`Следующая сомнительная клетка, осталось ${uncertain.size}`}
+                title={`Проверить сомнительные клетки: ${uncertain.size}`}
+              >
+                <span className="full-label">Следующая сомнительная клетка</span>
+                <span className="compact-label" aria-hidden="true">
+                  <ListChecks size={23} />
+                  <span className="review-badge">{uncertain.size}</span>
+                </span>
               </button>
             )}
             <div className={`solve-controls ${needsConfirmation ? 'needs-confirmation' : ''}`}>
@@ -627,11 +666,21 @@ export default function App() {
                     <button
                       className="button primary confirm-button"
                       disabled={locked || !hasNumbers}
+                      aria-label={review ? 'Я проверил(а) числа по фотографии' : 'Я заполнил числа'}
                       aria-describedby="solve-status-text"
                       onClick={confirmNumbers}
                     >
                       <CheckCircle2 size={21} />
-                      <span>{review ? 'Я проверил(а) числа по фотографии' : 'Я заполнил числа'}</span>
+                      {review ? (
+                        <>
+                          <span className="full-label">Я проверил(а) числа по фотографии</span>
+                          <span className="compact-label" aria-hidden="true">
+                            Я проверил(а) числа
+                          </span>
+                        </>
+                      ) : (
+                        <span>Я заполнил числа</span>
+                      )}
                     </button>
                   )}
                   {(!locked || checkOnly || solver.phase === 'finished') && !solved && (

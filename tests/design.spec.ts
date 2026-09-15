@@ -18,7 +18,9 @@ for (const [width, height] of [
       await expect(button).toBeInViewport({ ratio: 1 })
       expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(48)
     }
-    await expect(page.getByRole('button', { name: 'Решить судоку', exact: true })).toHaveCount(0)
+    await expect(
+      page.getByRole('button', { name: 'Решить судоку', exact: true, includeHidden: true }),
+    ).toHaveCount(0)
     await expect(page.getByRole('button', { name: 'Ввести вручную', exact: true })).toHaveCount(0)
     const first = page.getByLabel('Строка 1, столбец 1', { exact: true })
     await expect(first).toHaveAttribute('readonly', '')
@@ -39,12 +41,11 @@ for (const [width, height] of [
       else
         expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(height)
     } else {
-      await page.locator('.board-meta').scrollIntoViewIfNeeded()
+      await expect(grid).toBeInViewport({ ratio: 1 })
       const last = (await page.getByLabel('Строка 9, столбец 9', { exact: true }).boundingBox())!
       expect(last.y + last.height).toBeLessThanOrEqual(
         (await page.locator('.workflow-dock').boundingBox())!.y,
       )
-      await page.evaluate(() => window.scrollTo(0, 0))
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
     await page.screenshot({ path: `test-results/${testInfo.project.name}-workspace-${width}.png` })
@@ -66,7 +67,7 @@ test('defaults to fast solving and keeps editing and settings in secondary tools
   await expect(page.getByLabel('Скорость решения')).toHaveValue('fast')
   await page.keyboard.press('Escape')
   await menuAction(page, 'Ввести вручную')
-  const solve = page.getByRole('button', { name: 'Решить судоку', exact: true })
+  const solve = page.getByRole('button', { name: 'Решить судоку', exact: true, includeHidden: true })
   await expect(solve).toBeDisabled()
   await page.getByLabel('Строка 1, столбец 1', { exact: true }).fill('1')
   await expect(solve).toBeDisabled()

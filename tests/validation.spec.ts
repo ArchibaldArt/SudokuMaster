@@ -61,11 +61,13 @@ for (const example of [9, 16, 'eight'] as const) {
     await expect(page.locator('.solve-status')).toHaveCSS('background-color', 'rgb(237, 249, 240)')
     await expect(page.getByRole('button', { name: 'Я заполнил числа', exact: true })).toHaveCount(0)
     await expectUnrevealed(page, givens)
-    await expect(page.getByRole('button', { name: 'Решить судоку', exact: true })).toBeEnabled()
+    await expect(
+      page.getByRole('button', { name: 'Решить судоку', exact: true, includeHidden: true }),
+    ).toBeEnabled()
     if (example === 9) {
       await page.screenshot({ path: info.outputPath('check-result.png'), fullPage: true })
       await setSpeed(page, 'fast')
-      await page.getByRole('button', { name: 'Решить судоку', exact: true }).click()
+      await page.getByRole('button', { name: 'Решить судоку', exact: true, includeHidden: true }).click()
       await expect(page.getByText('Судоку решено!', { exact: true })).toBeVisible()
     }
   })
@@ -85,11 +87,15 @@ for (const digit of ['1', '5']) {
     const title = digit === '5' ? 'В исходных числах есть конфликт' : 'У этой задачи нет решения'
     await expect(page.getByText(title, { exact: true })).toBeVisible()
     await expect(page.locator('.solve-status')).toHaveCSS('background-color', 'rgb(255, 241, 242)')
-    await expect(page.getByRole('button', { name: 'Решить судоку', exact: true })).toBeDisabled()
+    await expect(
+      page.getByRole('button', { name: 'Решить судоку', exact: true, includeHidden: true }),
+    ).toBeDisabled()
     await expectUnrevealed(page, givens)
     await cell.fill('')
     await expect(page.getByText(title, { exact: true })).toHaveCount(0)
-    await expect(page.getByRole('button', { name: 'Решить судоку', exact: true })).toBeDisabled()
+    await expect(
+      page.getByRole('button', { name: 'Решить судоку', exact: true, includeHidden: true }),
+    ).toBeDisabled()
     await page.getByRole('button', { name: 'Я заполнил числа', exact: true }).click()
     await expect(page.getByText('Корректное судоку', { exact: true })).toBeVisible()
   })
@@ -104,7 +110,9 @@ test('reports multiple solutions without exposing one of them', async ({ page })
   await page.getByRole('button', { name: 'Я заполнил числа', exact: true }).click()
   await expect(page.getByText('Есть несколько решений', { exact: true })).toBeVisible()
   await expect(page.locator('.solve-status')).toHaveCSS('background-color', 'rgb(255, 248, 217)')
-  await expect(page.getByRole('button', { name: 'Решить судоку', exact: true })).toBeEnabled()
+  await expect(
+    page.getByRole('button', { name: 'Решить судоку', exact: true, includeHidden: true }),
+  ).toBeEnabled()
   await expect(page.getByText('У задачи несколько решений.', { exact: true })).toBeVisible()
   await expectUnrevealed(page, givens)
 })
@@ -129,7 +137,9 @@ test('keeps a timed-out check inconclusive and resumes or cancels without reveal
   await watchSolver(page)
   await page.getByRole('button', { name: 'Я заполнил числа', exact: true }).click()
   await expect(page.getByText('Проверка не завершена', { exact: true })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Решить судоку', exact: true })).toBeDisabled()
+  await expect(
+    page.getByRole('button', { name: 'Решить судоку', exact: true, includeHidden: true }),
+  ).toBeDisabled()
   await expectUnrevealed(page, givens)
   await page.getByRole('button', { name: 'Продолжить', exact: true }).click()
   await expect(page.getByText('Корректное судоку', { exact: true })).toBeVisible()
@@ -139,7 +149,9 @@ test('keeps a timed-out check inconclusive and resumes or cancels without reveal
   await expect(page.getByText('Проверка не завершена', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: 'Остановить', exact: true }).click()
   await expect(page.getByRole('button', { name: 'Я заполнил числа', exact: true })).toBeEnabled()
-  await expect(page.getByRole('button', { name: 'Решить судоку', exact: true })).toBeDisabled()
+  await expect(
+    page.getByRole('button', { name: 'Решить судоку', exact: true, includeHidden: true }),
+  ).toBeDisabled()
   await chooseExample(page, 16)
   await expect(page.getByText('Корректное судоку', { exact: true })).toHaveCount(0)
   await expect(page.getByText('Проверка не завершена', { exact: true })).toHaveCount(0)
@@ -150,7 +162,7 @@ test('waits for manual confirmation and does not offer a separate check action',
   await expect(page.getByRole('button', { name: 'Проверить судоку', exact: true })).toHaveCount(0)
   await menuAction(page, 'Ввести вручную')
   const confirm = page.getByRole('button', { name: 'Я заполнил числа', exact: true })
-  const solve = page.getByRole('button', { name: 'Решить судоку', exact: true })
+  const solve = page.getByRole('button', { name: 'Решить судоку', exact: true, includeHidden: true })
   await expect(confirm).toBeDisabled()
   await watchSolver(page)
   await page.getByLabel('Строка 1, столбец 1', { exact: true }).fill('1')
@@ -182,7 +194,9 @@ test('can retry an automatic check after a worker failure', async ({ page }) => 
   await confirm.click()
   await expect(page.getByText('Не удалось проверить судоку', { exact: true })).toBeVisible()
   await expect(confirm).toBeEnabled()
-  await expect(page.getByRole('button', { name: 'Решить судоку', exact: true })).toBeDisabled()
+  await expect(
+    page.getByRole('button', { name: 'Решить судоку', exact: true, includeHidden: true }),
+  ).toBeDisabled()
   await confirm.click()
   await expect(page.getByText('Корректное судоку', { exact: true })).toBeVisible()
 })
