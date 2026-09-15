@@ -1,7 +1,7 @@
 /* OpenCV runs in a classic worker so its WASM loader never blocks the page. */
 importScripts(new URL('./composition-vision.js', self.location.href).href)
 importScripts(new URL('./grid-geometry.js?v=blocks-1', self.location.href).href)
-importScripts(new URL('./printed-filter.js?v=print-2', self.location.href).href)
+importScripts(new URL('./printed-filter.js?v=print-3', self.location.href).href)
 let ready
 function getCV() {
   if (!ready)
@@ -432,7 +432,27 @@ function prepare(cv, src, corners, size, mode = 'all', boxSize = Math.sqrt(size)
             })
             continue
           }
-          for (let p = 0; p < labels.data32S.length; p++) if (keep.has(labels.data32S[p])) glyph.data[p] = 255
+          const strokeRidges = []
+          // Typical centreline thickness ignores the isolated blobs at pen
+          // crossings, which can be as wide as print despite thin strokes.
+          for (let p = 0; p < labels.data32S.length; p++) {
+            if (!keep.has(labels.data32S[p])) continue
+            glyph.data[p] = 255
+            const depth = distance.data32F[p]
+            if (
+              printedOnly &&
+              p % w > 0 &&
+              p % w < w - 1 &&
+              p >= w &&
+              p < w * (h - 1) &&
+              depth >= distance.data32F[p - 1] &&
+              depth >= distance.data32F[p + 1] &&
+              depth >= distance.data32F[p - w] &&
+              depth >= distance.data32F[p + w]
+            )
+              strokeRidges.push(depth)
+          }
+          strokeRidges.sort((a, b) => a - b)
           // Two substantial enclosed counters in one connected glyph identify an 8.
           // This image-only cross-check catches confident OCR confusions with 3;
           // disagreements still require review and never consult sudoku constraints.
@@ -494,6 +514,9 @@ function prepare(cv, src, corners, size, mode = 'all', boxSize = Math.sqrt(size)
               empty: false,
               relativeHeight: (maxY - minY) / h,
               relativeStroke: Math.max(...[...keep].map((label) => thickness[label])) / h,
+              strokeWeight: strokeRidges.length
+                ? strokeRidges[Math.floor(strokeRidges.length / 2)] / (maxY - minY)
+                : 0,
               reviewHeight: Math.max(0, reviewBottom - reviewTop) / h,
               reviewStroke,
               meanTone: [...keep].reduce((sum, label) => sum + tones[label], 0) / ink,
@@ -548,6 +571,7 @@ function prepare(cv, src, corners, size, mode = 'all', boxSize = Math.sqrt(size)
       delete cell.meanTone
       delete cell.reviewHeight
       delete cell.relativeStroke
+      delete cell.strokeWeight
       delete cell.reviewStroke
     }
     // Full cell bounds are separate from the inset OCR crops. They align the

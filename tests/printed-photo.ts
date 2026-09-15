@@ -2,7 +2,12 @@ import type { Page } from '@playwright/test'
 import type { BoardSize } from '../src/core/types'
 import { getExample } from '../src/data/examples'
 
-export async function printedPhoto(page: Page, size: BoardSize, rotate = false) {
+export async function printedPhoto(
+  page: Page,
+  size: BoardSize,
+  rotate = false,
+  values = getExample(size).givens,
+) {
   const base64 = await page.evaluate(
     ({ values, size, rotate }) => {
       const side = size * 100 + 200
@@ -37,7 +42,7 @@ export async function printedPhoto(page: Page, size: BoardSize, rotate = false) 
       })
       return canvas.toDataURL('image/png').split(',')[1]
     },
-    { values: getExample(size).givens, size, rotate },
+    { values, size, rotate },
   )
   return { name: `clean${size}.png`, mimeType: 'image/png', buffer: Buffer.from(base64, 'base64') }
 }

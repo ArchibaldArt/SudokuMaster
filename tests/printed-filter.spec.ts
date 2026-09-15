@@ -3,10 +3,35 @@ import { getExample } from '../src/data/examples'
 import { printedPhoto } from './printed-photo'
 import type { CellRecognition } from '../src/core/types'
 import corpus from './fixtures/web/corpus.json' with { type: 'json' }
+import newspaper from './fixtures/newspaper9-givens.json' with { type: 'json' }
 
 type CellCheck = Pick<CellRecognition, 'value' | 'needsReview'>
 
 for (const size of [9, 16] as const) {
+  test(`preserves a fully printed ${size}×${size} grid without treating thin font strokes as handwriting`, async ({
+    page,
+  }) => {
+    await page.goto('./')
+    const box = Math.sqrt(size)
+    const expected = Array.from({ length: size * size }, (_, i) => {
+      const row = Math.floor(i / size),
+        col = i % size
+      return ((row * box + Math.floor(row / box) + col) % size) + 1
+    })
+    await page
+      .getByLabel('Загрузить фотографию судоку')
+      .setInputFiles(await printedPhoto(page, size, false, expected))
+    const recognize = page.getByRole('button', { name: 'Распознать числа', exact: true })
+    await expect(recognize).toBeEnabled({ timeout: 30000 })
+    await page.getByRole('radio', { name: 'Только печатные', exact: true }).check()
+    await recognize.click()
+    await expect(page.getByRole('dialog')).toHaveCount(0, { timeout: 60000 })
+    expect(
+      await page
+        .locator('.cell input')
+        .evaluateAll((inputs) => inputs.map((input) => Number((input as HTMLInputElement).value))),
+    ).toEqual(expected)
+  })
   test(`preserves the ordinary, smaller printed font in ${size}×${size} filtered mode`, async ({ page }) => {
     await page.goto('./')
     await page.getByLabel('Загрузить фотографию судоку').setInputFiles(await printedPhoto(page, size))
@@ -115,6 +140,39 @@ for (const size of [9, 16] as const) {
         !expected[index] && cell.needsReview ? [index] : [],
       ),
     ).toEqual([])
+  })
+}
+
+for (const height of [2200, 1600]) {
+  test(`recognizes the supplied filled newspaper with taller pen strokes at height ${height}`, async ({
+    page,
+  }, info) => {
+    await page.goto('./')
+    const file = await page.evaluate(async (height) => {
+      const image = new Image()
+      image.src = '/tests/fixtures/newspaper9.png'
+      await image.decode()
+      const canvas = document.createElement('canvas')
+      canvas.height = height
+      canvas.width = Math.round((height * image.width) / image.height)
+      canvas.getContext('2d')!.drawImage(image, 0, 0, canvas.width, canvas.height)
+      return canvas.toDataURL('image/png').split(',')[1]
+    }, height)
+    await page
+      .getByLabel('Загрузить фотографию судоку')
+      .setInputFiles({ name: 'newspaper9.png', mimeType: 'image/png', buffer: Buffer.from(file, 'base64') })
+    const recognize = page.getByRole('button', { name: 'Распознать числа', exact: true })
+    await expect(recognize).toBeEnabled({ timeout: 30000 })
+    await expect(page.getByRole('dialog').getByRole('combobox')).toHaveValue('9')
+    await page.getByRole('radio', { name: 'Только печатные', exact: true }).check()
+    await recognize.click()
+    await expect(page.getByRole('dialog')).toHaveCount(0, { timeout: 60000 })
+    expect(
+      await page
+        .locator('.cell input')
+        .evaluateAll((inputs) => inputs.map((input) => Number((input as HTMLInputElement).value))),
+    ).toEqual(newspaper.flat())
+    await page.screenshot({ path: info.outputPath(`newspaper-${height}.png`), fullPage: true })
   })
 }
 

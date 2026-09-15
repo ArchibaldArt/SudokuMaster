@@ -127,7 +127,7 @@ export class PhotoProcessor {
     this.check()
     if (!this.vision) {
       // Refresh the worker when its geometry or recognition filters change.
-      this.vision = new Worker(localAsset('vision.worker.js?v=printed-glyphs-1'))
+      this.vision = new Worker(localAsset('vision.worker.js?v=printed-glyphs-2'))
       this.vision.onmessage = ({ data }) => {
         const promise = this.pending.get(data.id)
         if (data.error)
