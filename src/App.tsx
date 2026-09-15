@@ -58,6 +58,8 @@ export default function App() {
   const [review, setReview] = useState<RecognitionResult | null>(null)
   const [confirmed, setConfirmed] = useState(false)
   const [uncertain, setUncertain] = useState<Set<number>>(new Set())
+  const [editorMode, setEditorMode] = useState<'uncertain' | 'all'>('all')
+  const [editorCells, setEditorCells] = useState<number[]>([])
   const [view, setView] = useState<'grid' | 'photo'>('grid')
   const [zoom, setZoom] = useState(false)
   const [scale, setScale] = useState(1)
@@ -104,6 +106,9 @@ export default function App() {
   }
   const PuzzleBoard = puzzle.boards ? CompositeBoard : BoardViewport
   const selectedCellLabel = selected === null ? '' : cellLabel(puzzle, selected)
+  const editorPosition = editorMode === 'all' ? (selected ?? -1) : editorCells.indexOf(selected ?? -1)
+  const editorTotal = editorMode === 'all' ? puzzle.givens.length : editorCells.length
+  const editorLast = editorPosition === editorTotal - 1
   const selectedPreview = selected === null ? undefined : review?.cells[selected]?.previewUrl
   const selectedRect = selected !== null ? review?.cells[selected]?.rect : undefined
   const cropStyle = selectedPreview
@@ -144,8 +149,19 @@ export default function App() {
   const closeMenu = () => {
     if (menu.current) menu.current.open = false
   }
+  const configureEditor = (index: number, mode: typeof editorMode, focusFirst = false) => {
+    setEditorMode(mode)
+    // Keep a stable queue: editing removes the warning, but must not skip the next cell or break Back.
+    const remaining = [...uncertain].sort((a, b) => a - b)
+    const start = remaining.findIndex((cell) => cell >= index)
+    const cells = start > 0 ? [...remaining.slice(start), ...remaining.slice(0, start)] : remaining
+    setEditorCells(cells)
+    if (focusFirst && mode === 'uncertain' && cells.length) setSelected(cells[0])
+  }
   const openOverlay = (next: typeof overlay) => {
     closeMenu()
+    if (next === 'editor' && selected !== null)
+      configureEditor(selected, review && uncertain.size ? 'uncertain' : 'all')
     setOverlay(next)
   }
   const upload = () => {
@@ -240,8 +256,9 @@ export default function App() {
   }
   const nextUncertain = () => {
     const remaining = [...uncertain].sort((a, b) => a - b)
-    const next = remaining.find((i) => i > (selected ?? -1)) ?? remaining[0]
+    const next = remaining.find((i) => i >= (selected ?? -1)) ?? remaining[0]
     if (next !== undefined) {
+      configureEditor(next, 'uncertain')
       setSelected(next)
       setInspecting(true)
       setView('grid')
@@ -256,9 +273,10 @@ export default function App() {
     })
   }
   const nextEditorCell = () => {
-    if (selected === null || locked || selected >= puzzle.givens.length - 1) return
+    if (selected === null || locked || (editorMode === 'all' && editorLast)) return
     confirmCell(selected)
-    selectCell(selected + 1)
+    if (editorMode === 'uncertain' && editorLast) setOverlay(null)
+    else selectCell(editorMode === 'all' ? selected + 1 : editorCells[editorPosition + 1])
   }
   const download = async () => {
     setExporting(true)
@@ -914,11 +932,28 @@ export default function App() {
           </div>
           <div className="cell-editor-footer">
             <div className="editor-progress-row">
-              <p className="editor-progress" role="status" aria-live="polite" aria-atomic="true">
-                Клетка {selected + 1} из {puzzle.givens.length}
-              </p>
+              <div className="editor-progress-options">
+                <p className="editor-progress" role="status" aria-live="polite" aria-atomic="true">
+                  {editorMode === 'all'
+                    ? `Клетка ${selected + 1} из ${puzzle.givens.length}`
+                    : editorPosition < 0
+                      ? `Сомнительных: ${editorTotal}`
+                      : `Сомнительная ${editorPosition + 1} из ${editorTotal}`}
+                </p>
+                {review && (editorMode === 'uncertain' || uncertain.size > 0) && (
+                  <button
+                    className="text-button editor-mode"
+                    onClick={() =>
+                      configureEditor(selected, editorMode === 'uncertain' ? 'all' : 'uncertain', true)
+                    }
+                    disabled={locked}
+                  >
+                    {editorMode === 'uncertain' ? 'Все клетки' : 'Только сомнительные'}
+                  </button>
+                )}
+              </div>
               <button
-                className={`button ${selected === puzzle.givens.length - 1 ? 'primary' : 'secondary'}`}
+                className={`button ${editorMode === 'all' && editorLast ? 'primary' : 'secondary'}`}
                 onClick={() => {
                   confirmCell(selected)
                   setOverlay(null)
@@ -928,23 +963,30 @@ export default function App() {
                 Готово
               </button>
             </div>
-            <nav className="editor-navigation" aria-label="Проверка клеток по порядку">
+            <nav
+              className="editor-navigation"
+              aria-label={
+                editorMode === 'uncertain' ? 'Проверка сомнительных клеток' : 'Проверка клеток по порядку'
+              }
+            >
               <button
                 className="button secondary"
-                disabled={selected === 0 || locked}
+                disabled={editorPosition <= 0 || locked}
                 aria-label="Предыдущая клетка"
-                onClick={() => selectCell(selected - 1)}
+                onClick={() =>
+                  selectCell(editorMode === 'all' ? selected - 1 : editorCells[editorPosition - 1])
+                }
               >
                 <ChevronLeft size={19} />
                 Назад
               </button>
               <button
                 className="button primary"
-                disabled={selected === puzzle.givens.length - 1 || locked}
+                disabled={(editorMode === 'all' && editorLast) || locked}
                 onClick={nextEditorCell}
               >
-                Проверено, дальше
-                <ChevronRight size={19} />
+                {editorMode === 'uncertain' && editorLast ? 'Завершить проверку' : 'Проверено, дальше'}
+                {editorMode === 'uncertain' && editorLast ? <Check size={19} /> : <ChevronRight size={19} />}
               </button>
             </nav>
           </div>

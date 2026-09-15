@@ -227,10 +227,10 @@ svg {
   padding: 8px 12px 4px;
 }
 .workspace {
-  --board-panel-height: calc(100dvh - 112px);
+  --board-panel-height: calc(100dvh - 96px);
   width: min(1440px, 100%);
   margin: 0 auto;
-  padding: 24px;
+  padding: 16px 24px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
   gap: 24px;
@@ -240,7 +240,7 @@ svg {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  padding: 16px 20px;
+  padding: 8px 12px;
   background: white;
   border: 1px solid var(--line);
   border-radius: 16px;
@@ -259,12 +259,19 @@ svg {
   flex-direction: column;
   min-height: 0;
 }
+.board-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
+}
 .board-heading {
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 12px;
   min-height: 44px;
 }
 .board-title {
@@ -299,7 +306,7 @@ svg {
   align-items: center;
   justify-content: flex-end;
   gap: 2px;
-  margin: -4px 0 10px;
+  flex-shrink: 0;
 }
 .board-scale .icon-button,
 .scale-value {
@@ -314,7 +321,12 @@ svg {
   border-radius: 6px;
 }
 .grid-viewport {
-  --board-base-width: min(100%, 760px, calc(100dvh - 244px));
+  /* Panel padding/borders (18), toolbar (48), footer (32); zoom grows inside the scrollport. */
+  --board-base-width: min(
+    100%,
+    760px,
+    calc(var(--board-panel-height) - 98px - var(--cell-toolbar-extra, 0px))
+  );
   min-height: 0;
   overflow: auto;
   overscroll-behavior: contain;
@@ -488,8 +500,8 @@ svg {
   border-radius: 8px;
 }
 .board-meta {
-  margin-top: 10px;
-  min-height: 30px;
+  margin-top: 4px;
+  min-height: 28px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -770,7 +782,11 @@ svg {
   padding: 20px;
 }
 .is-zoomed .grid-viewport {
-  --board-base-width: min(100%, 900px, calc(100dvh - 160px));
+  --board-base-width: min(
+    100%,
+    900px,
+    calc(var(--board-panel-height) - 98px - var(--cell-toolbar-extra, 0px))
+  );
 }
 .check-mode .solve-status > p {
   display: block;
@@ -850,6 +866,16 @@ svg {
   font-size: 16px;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
+}
+.editor-progress-options {
+  min-width: 0;
+}
+.editor-mode {
+  min-height: 44px;
+  padding: 2px 0;
+  justify-content: flex-start;
+  text-align: left;
+  color: var(--accent);
 }
 .editor-navigation {
   display: grid;
@@ -1199,6 +1225,31 @@ select {
 }
 .composition-map-dialog > .button {
   width: 100%;
+}
+@media (min-width: 1024px) {
+  .board-meta .text-button {
+    min-height: 28px;
+    padding-block: 2px;
+  }
+  .board-panel:has(.cell-tools) {
+    --cell-toolbar-extra: 16px;
+  }
+  .board-panel:has(.cell-tools) .board-meta {
+    display: none;
+  }
+  .cell-tools {
+    min-height: 44px;
+    margin-top: 4px;
+    padding-top: 0;
+    border: 0;
+  }
+  .cell-tools .cell-crop {
+    width: 44px;
+    height: 44px;
+  }
+  .cell-tools .text-button {
+    min-height: 44px;
+  }
 }
 @media (max-width: 1023px) {
   .site-header {

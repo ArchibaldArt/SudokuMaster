@@ -14,6 +14,8 @@ test.describe('mouse wheel scrolling', () => {
     await expect(recognize).toBeEnabled({ timeout: 30000 })
     await recognize.click()
     await expect(page.getByRole('dialog')).toHaveCount(0, { timeout: 60000 })
+    await expect(page.locator('.sudoku-grid')).toBeInViewport({ ratio: 0.999 })
+    expect((await page.locator('.board-toolbar').boundingBox())!.height).toBeLessThanOrEqual(48)
     for (let i = 0; i < 4; i++)
       await page.getByRole('button', { name: 'Увеличить масштаб', exact: true }).click()
 
@@ -152,7 +154,7 @@ for (const width of [1440, 390]) {
 }
 
 for (const height of [640, 900]) {
-  test(`uses the desktop panel for zoom before adding horizontal scrolling at height ${height}`, async ({
+  test(`fits the desktop grid at 100% and scrolls zoomed content at height ${height}`, async ({
     page,
   }, info) => {
     await page.setViewportSize({ width: 1440, height })
@@ -161,14 +163,23 @@ for (const height of [640, 900]) {
     const grid = page.locator('.sudoku-grid')
     const viewport = page.locator('.grid-viewport')
     const original = (await grid.boundingBox())!
+    const panel = (await page.locator('.board-panel').boundingBox())!
+    expect((await page.locator('.board-toolbar').boundingBox())!.height).toBeLessThanOrEqual(48)
+    expect(original.y - panel.y).toBeLessThanOrEqual(60)
+    expect(panel.y + panel.height - original.y - original.height).toBeLessThanOrEqual(42)
+    expect(await viewport.evaluate((el) => el.scrollHeight - el.clientHeight)).toBeLessThanOrEqual(1)
+    await expect(grid).toBeInViewport({ ratio: 0.999 })
+    await page.screenshot({ path: info.outputPath('desktop-100-percent.png'), fullPage: true })
     for (let i = 0; i < 2; i++)
       await page.getByRole('button', { name: 'Увеличить масштаб', exact: true }).click()
     const enlarged = (await grid.boundingBox())!
     expect(enlarged.width / original.width).toBeCloseTo(1.5, 2)
     const region = (await viewport.boundingBox())!
     expect(enlarged.x).toBeGreaterThanOrEqual(region.x)
-    expect(enlarged.x + enlarged.width).toBeLessThanOrEqual(region.x + region.width + 1)
-    expect(await viewport.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1)
+    expect(await viewport.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeCloseTo(
+      Math.max(0, enlarged.width - region.width),
+      0,
+    )
     expect(await viewport.evaluate((el) => el.scrollHeight - el.clientHeight)).toBeGreaterThan(0)
     await page.screenshot({ path: info.outputPath('desktop-150-percent.png'), fullPage: true })
 
@@ -187,6 +198,7 @@ for (const height of [640, 900]) {
 
     await page.getByRole('button', { name: 'Масштаб 200%, сбросить до 100%', exact: true }).click()
     await page.getByRole('button', { name: 'Увеличить поле', exact: true }).click()
+    expect(await viewport.evaluate((el) => el.scrollHeight - el.clientHeight)).toBeLessThanOrEqual(1)
     const fullSize = (await grid.boundingBox())!.width
     await page.getByRole('button', { name: 'Увеличить масштаб', exact: true }).click()
     expect((await grid.boundingBox())!.width / fullSize).toBeCloseTo(1.25, 2)

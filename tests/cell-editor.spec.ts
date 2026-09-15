@@ -77,6 +77,7 @@ test('highlights the current number, preserves corrections and updates the photo
     })
   }
   await page.setViewportSize(originalViewport)
+  await dialog.getByRole('button', { name: 'Все клетки', exact: true }).click()
   await next.click()
   await expect(dialog.locator('.editor-cell-label')).toHaveText('Строка 2, столбец 16')
   await expect(crop).not.toHaveAttribute('style', originalCrop!)
@@ -110,7 +111,85 @@ test('highlights the current number, preserves corrections and updates the photo
   await next.click()
   await expect(page.locator(`[data-cell-id="${uncertain}"]`)).not.toHaveClass(/uncertain/)
   await dialog.getByRole('button', { name: 'Готово', exact: true }).click()
-  await expect(page.getByRole('button', { name: 'Решить судоку', exact: true })).toBeDisabled()
+  await expect(
+    page.getByRole('button', { name: 'Решить судоку', exact: true, includeHidden: true }),
+  ).toBeDisabled()
+})
+
+test('prioritizes uncertain cells, keeps a stable review queue and finishes without checking every blank', async ({
+  page,
+}, info) => {
+  await page.goto('./')
+  await page.getByLabel('Загрузить фотографию судоку').setInputFiles('tests/fixtures/blue16.png')
+  const recognize = page.getByRole('button', { name: 'Распознать числа', exact: true })
+  await expect(recognize).toBeEnabled({ timeout: 30000 })
+  await recognize.click()
+  await expect(page.getByRole('dialog')).toHaveCount(0, { timeout: 60000 })
+  const uncertain = await page
+    .locator('.cell.uncertain')
+    .evaluateAll((cells) =>
+      cells.map((cell) => Number(cell.getAttribute('data-cell-id'))).sort((a, b) => a - b),
+    )
+  expect(uncertain.length).toBeGreaterThanOrEqual(2)
+  // Starting at the last warning must still visit the earlier warnings.
+  const start = uncertain.at(-1)!
+  await page.locator(`[data-cell-id="${start}"] input`).click()
+  await page.getByRole('button', { name: 'Правка', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: 'Правка клетки' })
+  const progress = dialog.getByRole('status')
+  const next = dialog.getByRole('button', { name: 'Проверено, дальше', exact: true })
+  await expect(progress).toHaveText(`Сомнительная 1 из ${uncertain.length}`)
+  await dialog.getByRole('button', { name: 'Закрыть: Правка клетки', exact: true }).click()
+  await expect(page.locator('.cell.uncertain')).toHaveCount(uncertain.length)
+  await page.getByRole('button', { name: /^Следующая сомнительная клетка, осталось/ }).click()
+  await expect(progress).toHaveText(`Сомнительная 1 из ${uncertain.length}`)
+  const originalViewport = page.viewportSize()!
+  for (const viewport of [
+    { width: 320, height: 568 },
+    { width: 844, height: 390 },
+  ]) {
+    await page.setViewportSize(viewport)
+    await expectAllChoicesVisible(dialog)
+    await dialog.screenshot({ path: info.outputPath(`uncertain-${viewport.width}.png`) })
+  }
+  await page.setViewportSize(originalViewport)
+  const crop = dialog.getByRole('img', { name: 'Фрагмент выбранной клетки на фотографии' })
+  const originalCrop = await crop.getAttribute('style')
+  await dialog.getByRole('button', { name: 'Пусто', exact: true }).click()
+  await expect(page.locator(`[data-cell-id="${start}"]`)).not.toHaveClass(/uncertain/)
+  await expect(progress).toHaveText(`Сомнительная 1 из ${uncertain.length}`)
+  await next.click()
+  await expect(dialog.locator('.editor-cell-label')).toHaveText(cellLabel(getExample(16), uncertain[0]))
+  await expect(crop).not.toHaveAttribute('style', originalCrop!)
+  await dialog.getByRole('button', { name: 'Предыдущая клетка', exact: true }).click()
+  await expect(dialog.getByRole('img', { name: 'Клетка в поле пустая', exact: true })).toBeEmpty()
+  await expect(crop).toHaveAttribute('style', originalCrop!)
+  await next.click()
+  // All-cell navigation is available explicitly and switching modes does not confirm the current cell.
+  await dialog.getByRole('button', { name: 'Все клетки', exact: true }).click()
+  await expect(progress).toHaveText(`Клетка ${uncertain[0] + 1} из 256`)
+  if (uncertain[0] > 0) await dialog.getByRole('button', { name: 'Предыдущая клетка', exact: true }).click()
+  await dialog.getByRole('button', { name: 'Только сомнительные', exact: true }).click()
+  const remaining = uncertain.slice(0, -1)
+  for (let i = 0; i < remaining.length; i++) {
+    await expect(progress).toHaveText(`Сомнительная ${i + 1} из ${remaining.length}`)
+    await expect(dialog.locator('.editor-cell-label')).toHaveText(cellLabel(getExample(16), remaining[i]))
+    await dialog
+      .getByRole('button', {
+        name: i === remaining.length - 1 ? 'Завершить проверку' : 'Проверено, дальше',
+        exact: true,
+      })
+      .click()
+  }
+  await expect(dialog).toHaveCount(0)
+  await expect(page.locator('.cell.uncertain')).toHaveCount(0)
+  await expect(
+    page.getByRole('button', { name: 'Я проверил(а) числа по фотографии', exact: true }),
+  ).toBeVisible()
+  // With no warnings left, individual corrections and the all-cell fallback remain available.
+  await page.getByRole('button', { name: 'Правка', exact: true }).click()
+  await expect(progress).toHaveText(`Клетка ${remaining.at(-1)! + 1} из 256`)
+  await expect(dialog.getByRole('button', { name: 'Только сомнительные', exact: true })).toHaveCount(0)
 })
 
 test('reviews all 81 cells in order, including blanks, and stops at the last cell', async ({ page }) => {
